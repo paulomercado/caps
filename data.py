@@ -3,27 +3,6 @@ import pandas as pd
 import numpy as np
 import statsmodels.tsa.stattools as ts 
 
-def process_gdp(data_path):
-        """
-        Loads and processes Macro.csv to create Index, Grain, X, y
-        Returns a dataframe ready for TempDisagg
-        """
-        data = pd.read_csv(data_path)
-        
-        df = pd.DataFrame({'Index': data['Year']})
-        df['Index'] = df['Index'].astype(int) * 10 + ((df.index // 3) % 4 + 1)
-        df['Grain'] = (list(range(1, 4)) * len(df))[:len(df)]
-        df['y'] = data['Nominal GDP']
-        df['y'] = df.groupby('Index')['y'].bfill()
-        
-        df['X'] = (
-            pd.to_numeric(data['Exports'], errors='coerce') +
-            pd.to_numeric(data['Imports'], errors='coerce')
-        ) * pd.to_numeric(data['USDPHP'], errors='coerce')
-        
-        df = df[(df['Index'] // 10).between(1991, 2024)].reset_index(drop=True)
-        
-        return df
 
 def load_data():
      return False
