@@ -1,44 +1,21 @@
-from tempdisagg import TempDisaggModel
 import pandas as pd
 import numpy as np
-import statsmodels.tsa.stattools as ts 
+from functools import reduce
+import pickle
+import os
+import pandas as pd
+import torch
+from torch.utils.data import Dataset
 
-
-def load_data():
-     return False
-
-class Disagg:
-    def __init__(self, method="litterman-opt", conversion="sum"):
-        self.method = method
-        self.conversion = conversion
-        self.model = None
+class TimeSeriesDataset(Dataset):
+    def __init__(self, X, y, lag=2):
+        self.X = torch.tensor(X).float()
+        self.y = torch.tensor(y).float()
+        self.lag = lag
     
-    def fit_predict(self, Index, Grain, X, y):
-        """
-        Inputs:
-            Index: pandas Series or list
-            Grain: pandas Series or list
-            X: pandas Series or list of regressors
-            y: pandas Series or list of target
-        Returns:
-            df_out: pandas DataFrame with Index, Grain, X, y, predicted
-        """
-        df = pd.DataFrame({
-            "Index": Index,
-            "Grain": Grain,
-            "X": X,
-            "y": y
-        })
-        
-        # Optional: fill missing y values within Index groups
-        df['y'] = df.groupby('Index')['y'].bfill()
-
-        # Fit model
-        self.model = TempDisaggModel(method=self.method, conversion=self.conversion)
-        self.model.fit(df)
-        
-        # Predict
-        y_hat = self.model.predict(full=False)
-        df['predicted'] = y_hat
-        
-        return df
+    def __len__(self):
+        return len(self.X) - self.lag
+    
+    def __getitem__(self, idx):
+        # pick only the lagged observation(s)
+        return self.X[idx:idx+self.lag:self.lag], self.y[idx+self.lag]
