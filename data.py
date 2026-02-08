@@ -1,21 +1,18 @@
-import pandas as pd
-import numpy as np
 from functools import reduce
-import pickle
-import os
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
 
 class TimeSeriesDataset(Dataset):
-    def __init__(self, X, y, lag=2):
+    def __init__(self, X, y, lag_years=2):
         self.X = torch.tensor(X).float()
         self.y = torch.tensor(y).float()
-        self.lag = lag
-    
+        self.seq_len = lag_years * 12  # convert years to months
+
     def __len__(self):
-        return len(self.X) - self.lag
-    
+        return len(self.X) - self.seq_len
+
     def __getitem__(self, idx):
-        # pick only the lagged observation(s)
-        return self.X[idx:idx+self.lag:self.lag], self.y[idx+self.lag]
+        x = self.X[idx:idx+self.seq_len]   # 24 months of input
+        y = self.y[idx+self.seq_len]       # target month
+        return x, y

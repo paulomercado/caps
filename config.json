@@ -1,0 +1,14 @@
+{
+  "hidden_size": 256,
+  "lr": 1e-03,
+  "wd": 1e-05,
+  "dropout": 0.1,
+  "seed": 1,
+  "num_layers": 3,
+  "patience": 20,
+  "factor": 0.1,
+  "seq_len": 12,
+  "batch_size": 32,
+  "use_amp": false,
+  "epoch": 500
+}
