@@ -1,0 +1,27 @@
+{
+    "best_loss": 54.14380798339844,
+    "best_std": 23.819424171041696,
+    "experiment_name": "all_fiscal_autoregressive_alldummies",
+    "features": [
+        "BIR",
+        "BOC",
+        "Other Offices",
+        "Non-tax Revenues",
+        "Expenditures"
+    ],
+    "labels": [
+        "BIR",
+        "BOC",
+        "Other Offices",
+        "Non-tax Revenues",
+        "Expenditures"
+    ],
+    "dummy_vars": [
+        "COVID-19",
+        "TRAIN",
+        "CREATE",
+        "FIST",
+        "BIR_COMM"
+    ],
+    "num_trials": 250
+}

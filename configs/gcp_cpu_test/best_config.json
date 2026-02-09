@@ -1,0 +1,32 @@
+{
+    "lr": 0.0003895826098831341,
+    "hidden_size": 128,
+    "dropout": 0.4739092570666083,
+    "wd": 1.9307801145405245e-05,
+    "num_layers": 2,
+    "batch_size": 32,
+    "seq_len": 15,
+    "factor": 0.4767598365487574,
+    "patience": 10,
+    "features": [
+        "BIR",
+        "BOC",
+        "Other Offices",
+        "TotalTrade_PHPMN",
+        "NominalGDP_disagg",
+        "Pop_disagg"
+    ],
+    "labels": [
+        "BIR",
+        "BOC",
+        "Other Offices"
+    ],
+    "dummy_vars": [
+        "COVID-19",
+        "TRAIN",
+        "CREATE",
+        "FIST",
+        "BIR_COMM"
+    ],
+    "experiment_name": "gcp_cpu_test"
+}
