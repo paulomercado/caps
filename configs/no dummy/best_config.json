@@ -1,0 +1,30 @@
+{
+    "lr": 0.00011720040954774559,
+    "hidden_size": 128,
+    "dropout": 0.37700504663799383,
+    "wd": 1.1419759896122264e-05,
+    "num_layers": 2,
+    "batch_size": 32,
+    "seq_len": 20,
+    "factor": 0.6790684753799334,
+    "patience": 5,
+    "features": [
+        "BIR",
+        "BOC",
+        "Other Offices",
+        "Non-tax Revenues",
+        "Expenditures",
+        "TotalTrade_PHPMN",
+        "NominalGDP_disagg",
+        "Pop_disagg"
+    ],
+    "labels": [
+        "BIR",
+        "BOC",
+        "Other Offices",
+        "Non-tax Revenues",
+        "Expenditures"
+    ],
+    "dummy_vars": [],
+    "experiment_name": "no dummy"
+}
