@@ -16,7 +16,6 @@ venv/
 
 # Ray results
 ray_results/
-Transforms/
 
 # IDE
 .vscode/

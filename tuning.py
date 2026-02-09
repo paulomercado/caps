@@ -28,8 +28,8 @@ def ray_train(config):
     args = Arguments(
         **config,
         seed=1,
-        epoch=200,
-        
+        epoch=100,
+        tuning_mode=True,       
         cv_data=dataset['cv_data'],
         cv_labels=dataset['cv_labels'],
         test_data=dataset['test_data'],
