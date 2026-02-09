@@ -195,6 +195,8 @@ def run(model, train_loader, val_loader, test_loader, args, fold=None):
     # Inverse transform using fold-specific or default scaler
     if fold is not None:
         scaler_name = f"Transforms/labels_scaled{fold}"
+    elif args.final is True:
+        scaler_name = f"Transforms/final_labels_scaled"
     else:
         scaler_name = f"Transforms/labels_scaled"
     

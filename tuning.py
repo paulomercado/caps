@@ -32,9 +32,11 @@ def ray_train(config):
         input_size=dataset['input_size'],
         output_size=dataset['output_size'],
         
-        device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+        device = torch.device("mps" if torch.backends.mps.is_available() 
+                              else "cuda" if torch.cuda.is_available()
+                              else "cpu"),
         train_criterion=nn.MSELoss(),
-        test_criterion=MAPELoss(),
+        test_criterion=MAPELoss()
     )
     
     # Set seed
