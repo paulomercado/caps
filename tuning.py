@@ -1,11 +1,10 @@
-# tuning.py
 import torch
 import torch.nn as nn
 import numpy as np
-from ray import tune  # Change this line
+from ray import tune  
 
 def ray_train(config):
-    """Self-contained Ray Tune training function"""
+
     
     # Import all your custom functions
     from train import (
@@ -15,9 +14,15 @@ def ray_train(config):
         Arguments,
         MAPELoss
     )
-    
+
+    data_args = Arguments(
+        features=config.get('features', ['BIR', 'BOC', 'Other Offices',"Non-tax Revenues", "Expenditures", 'TotalTrade_PHPMN', 'NominalGDP_disagg', 'Pop_disagg']),
+        labels=config.get('labels', ['BIR', 'BOC', 'Other Offices',"Non-tax Revenues", "Expenditures"]),
+        dummy_vars=config.get('dummy_vars', ['COVID-19','TRAIN','CREATE','FIST','BIR_COMM']),
+        experiment_name=config.get('experiment_name', 'default')
+    )
     # Load dataset
-    dataset = load_dataset(None)
+    dataset = load_dataset(data_args)
     
     # Create args
     args = Arguments(

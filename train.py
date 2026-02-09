@@ -61,7 +61,6 @@ def load_dataset(args):
 
     macro_data = pd.read_csv(os.path.join(data_dir, "disaggregated.csv"))
     macro_data = macro_data.rename(columns={'Unnamed: 3': 'Date'}).set_index('Date')
-    macro_data = macro_data[['TotalTrade_PHPMN', 'NominalGDP_disagg', 'Pop_disagg']]
 
     dummy = pd.read_csv(os.path.join(data_dir, "dummy.csv")).fillna(0)
     dummy = dummy.set_index("Date")
@@ -69,7 +68,6 @@ def load_dataset(args):
     btr_data.index = pd.to_datetime(btr_data.index)
     macro_data.index = pd.to_datetime(macro_data.index)
     dummy.index = pd.to_datetime(dummy.index)
-    
     
     btr_data = btr_data.sort_index()
     macro_data = macro_data.sort_index()
@@ -84,12 +82,32 @@ def load_dataset(args):
     # Join data
     df = btr_data.join(macro_data, how="inner").join(dummy, how="inner")
 
+     # Extract configuration
+    feature_cols = args.features if hasattr(args, 'features') else ['BIR', 'BOC', 'Other Offices',"Non-tax Revenues", "Expenditures", 'TotalTrade_PHPMN', 'NominalGDP_disagg', 'Pop_disagg']
+    label_cols = args.labels if hasattr(args, 'labels') else ['BIR', 'BOC', 'Other Offices',"Non-tax Revenues", "Expenditures"]
+    dummy_vars = args.dummy_vars if hasattr(args, 'dummy_vars') else ['COVID-19','TRAIN','CREATE','FIST','BIR_COMM']
+
+    feature_dfs = []
+    
+    # Add main features (can now come from any source)
+    for col in feature_cols:
+        if col in df.columns:
+            feature_dfs.append(df[[col]])
+        else:
+            print(f"Warning: Feature '{col}' not found in data")
+
+    if dummy_vars:
+        # Validate that dummy vars exist
+        available_dummies = dummy.columns.tolist()
+        valid_dummies = [d for d in dummy_vars if d in available_dummies]
+        
+        if valid_dummies:
+            feature_dfs.append(dummy[valid_dummies])
+
     # Create X and y
-    X = pd.concat(
-        [btr_data[['BIR', 'BOC', 'Other Offices']], macro_data, dummy],
-        axis=1
-    ).values.copy()
-    y = df[['BIR', 'BOC', 'Other Offices']].values.copy()
+    X = pd.concat(feature_dfs, axis=1).values.copy()
+
+    y = df[label_cols].values.copy()
 
     # Split into train/val/test
     train_data, val_data, test_data = split_data(X)
@@ -193,12 +211,14 @@ def run(model, train_loader, val_loader, test_loader, args, fold=None):
     _, test_preds = evaluate(model, test_loader, args.device, args.test_criterion, args)
 
     # Inverse transform using fold-specific or default scaler
+    exp_name = args.experiment_name if hasattr(args, 'experiment_name') else 'default'
+    
     if fold is not None:
-        scaler_name = f"Transforms/labels_scaled{fold}"
-    elif args.final is True:
-        scaler_name = f"Transforms/final_labels_scaled"
+        # Cross-validation run
+        scaler_name = f"Transforms/{exp_name}/labels_scaled_{fold}.pkl"
     else:
-        scaler_name = f"Transforms/labels_scaled"
+        # Final model run
+        scaler_name = f"Transforms/{exp_name}/labels_scaled.pkl"
     
     inversed_test_preds = inverse_transform(test_preds, scaler_name)
     
@@ -226,6 +246,8 @@ def crossval(data, labels, test_data, test_labels, args, n_splits=5):
     tscv = TimeSeriesSplit(n_splits=n_splits)
     fold_results = []
     
+    exp_name = args.experiment_name if hasattr(args, 'experiment_name') else 'default'
+
     for fold, (train_idx, val_idx) in enumerate(tscv.split(data)):
         print(f"\n{'='*50}")
         print(f"Fold {fold + 1}/{n_splits}")
@@ -239,12 +261,12 @@ def crossval(data, labels, test_data, test_labels, args, n_splits=5):
         
         # Scale data
         set_seed(1)
-        train_data_scaled = transform_data(train_data_fold, f"Transforms/train_scaled_{fold}")
-        train_labels_scaled = transform_data(train_labels_fold, f"Transforms/labels_scaled{fold}")
-        val_data_scaled = transform_data(val_data_fold, f"Transforms/train_scaled_{fold}")
-        val_labels_scaled = transform_data(val_labels_fold, f"Transforms/labels_scaled{fold}")
-        test_data_scaled = transform_data(test_data, f"Transforms/train_scaled_{fold}")
-        test_labels_scaled = transform_data(test_labels, f"Transforms/labels_scaled{fold}")
+        train_data_scaled = transform_data(train_data_fold, f"Transforms/{exp_name}/train_scaled_{fold}.pkl")
+        train_labels_scaled = transform_data(train_labels_fold, f"Transforms/{exp_name}/labels_scaled_{fold}.pkl")
+        val_data_scaled = transform_data(val_data_fold, f"Transforms/{exp_name}/train_scaled_{fold}.pkl")
+        val_labels_scaled = transform_data(val_labels_fold, f"Transforms/{exp_name}/labels_scaled_{fold}.pkl")
+        test_data_scaled = transform_data(test_data, f"Transforms/{exp_name}/test_scaled_{fold}.pkl")
+        test_labels_scaled = transform_data(test_labels, f"Transforms/{exp_name}/labels_scaled_{fold}.pkl")
         
         input_size = train_data_scaled.shape[1]
         output_size = train_labels_scaled.shape[1]

@@ -18,8 +18,13 @@ class TimeSeriesDataset(Dataset):
     def __getitem__(self, idx):
         return (self.X[idx:idx+self.seq_len], self.y[idx+self.seq_len])
 
-def transform_data(data, save_path="Transforms/scaler.pkl"):
+def transform_data(data, save_path="Transforms/default/scaler.pkl"):
     """Transform data and save scaler"""
+    
+    # Convert to absolute path if it's relative
+    if not os.path.isabs(save_path):
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        save_path = os.path.join(base_dir, save_path)
     
     # Create directory if it doesn't exist
     save_dir = os.path.dirname(save_path)
@@ -34,7 +39,14 @@ def transform_data(data, save_path="Transforms/scaler.pkl"):
     
     return data_scaled
 
-def inverse_transform(data, load_path="Transforms/scaler.pkl"):
+def inverse_transform(data, load_path="Transforms/default/scaler.pkl"):
+    """Inverse transform data using saved scaler"""
+    
+    # Convert to absolute path if it's relative
+    if not os.path.isabs(load_path):
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        load_path = os.path.join(base_dir, load_path)
+    
     with open(load_path, "rb") as f:
         scaler = pickle.load(f)
     return scaler.inverse_transform(data)

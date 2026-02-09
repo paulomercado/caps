@@ -1,11 +1,36 @@
 {
-    "lr": 0.00421311740973548,
-    "hidden_size": 128,
-    "dropout": 0.34571441137688197,
-    "wd": 9.711504228685185e-06,
-    "num_layers": 2,
+    "lr": 0.0001190558085965863,
+    "hidden_size": 64,
+    "dropout": 0.2249057400844352,
+    "wd": 2.7831944384389864e-05,
+    "num_layers": 3,
     "batch_size": 64,
     "seq_len": 20,
-    "factor": 0.5858745396957438,
-    "patience": 15
+    "factor": 0.6831564353430589,
+    "patience": 15,
+    "features": [
+        "BIR",
+        "BOC",
+        "Other Offices",
+        "Non-tax Revenues",
+        "Expenditures",
+        "TotalTrade_PHPMN",
+        "NominalGDP_disagg",
+        "Pop_disagg"
+    ],
+    "labels": [
+        "BIR",
+        "BOC",
+        "Other Offices",
+        "Non-tax Revenues",
+        "Expenditures"
+    ],
+    "dummy_vars": [
+        "COVID-19",
+        "TRAIN",
+        "CREATE",
+        "FIST",
+        "BIR_COMM"
+    ],
+    "experiment_name": "exp_baseline"
 }
