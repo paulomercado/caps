@@ -239,17 +239,19 @@ def run(model, train_loader, val_loader, test_loader, args, fold=None):
     
     return test_loss, inversed_test_preds, train_losses, val_losses
 
-def crossval(data, labels, test_data, test_labels, args, n_splits=5):
-
-    from sklearn.model_selection import TimeSeriesSplit
+def crossval(data, labels, args, n_splits=5):  # REMOVED: test_data, test_labels
+    """
+    Cross-validation for hyperparameter tuning.
+    Evaluates on validation folds within the data.
+    """
     
     tscv = TimeSeriesSplit(n_splits=n_splits)
     fold_results = []
     
     exp_name = args.experiment_name if hasattr(args, 'experiment_name') else 'default'
     is_tuning = hasattr(args, 'tuning_mode') and args.tuning_mode
+    
     for fold, (train_idx, val_idx) in enumerate(tscv.split(data)):
-        # Only print fold headers if not tuning
         if not is_tuning:
             print(f"\n{'='*50}")
             print(f"Fold {fold + 1}/{n_splits}")
@@ -261,14 +263,12 @@ def crossval(data, labels, test_data, test_labels, args, n_splits=5):
         val_data_fold = data[val_idx]
         val_labels_fold = labels[val_idx]
         
-        # Scale data with organized folder structure
+        # Scale data
         set_seed(1)
         train_data_scaled = transform_data(train_data_fold, f"Transforms/{exp_name}/train_scaled_{fold}.pkl")
         train_labels_scaled = transform_data(train_labels_fold, f"Transforms/{exp_name}/labels_scaled_{fold}.pkl")
         val_data_scaled = transform_data(val_data_fold, f"Transforms/{exp_name}/train_scaled_{fold}.pkl")
         val_labels_scaled = transform_data(val_labels_fold, f"Transforms/{exp_name}/labels_scaled_{fold}.pkl")
-        test_data_scaled = transform_data(test_data, f"Transforms/{exp_name}/test_scaled_{fold}.pkl")
-        test_labels_scaled = transform_data(test_labels, f"Transforms/{exp_name}/labels_scaled_{fold}.pkl")
         
         input_size = train_data_scaled.shape[1]
         output_size = train_labels_scaled.shape[1]
@@ -276,12 +276,10 @@ def crossval(data, labels, test_data, test_labels, args, n_splits=5):
         # Create datasets
         train_dataset = TimeSeriesDataset(train_data_scaled, train_labels_scaled, seq_len=args.seq_len)
         val_dataset = TimeSeriesDataset(val_data_scaled, val_labels_scaled, seq_len=args.seq_len)
-        test_dataset = TimeSeriesDataset(test_data_scaled, test_labels_scaled, seq_len=args.seq_len)
         
         # Create loaders
         train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=False)
         val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
-        test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
         
         # Create fresh model for this fold
         set_seed(1)
@@ -290,15 +288,20 @@ def crossval(data, labels, test_data, test_labels, args, n_splits=5):
             hidden_size=args.hidden_size,
             output_size=output_size,
             num_layers=args.num_layers,
-            dropout=args.dropout
+            dropout=args.dropout,
+            use_branches=getattr(args, 'use_branches', True),
+            use_attention=getattr(args, 'use_attention', True),
+            use_residual=getattr(args, 'use_residual', False),
+            num_attention_heads=getattr(args, 'num_attention_heads', 4),
+            use_se=getattr(args, 'use_se', True)
         ).to(args.device)
         
-        # Pass fold number to run function
+        # Train and evaluate on validation fold
         test_loss, test_preds, train_losses, val_losses = run(
             model, 
             train_loader, 
             val_loader, 
-            test_loader, 
+            val_loader,  # Use val_loader for evaluation
             args,
             fold=fold
         )
@@ -314,18 +317,16 @@ def crossval(data, labels, test_data, test_labels, args, n_splits=5):
             'val_size': len(val_idx)
         })
         
-        # Only print fold results if not tuning
         if not is_tuning:
-            print(f"Fold {fold + 1} Test Loss: {test_loss:.4f}")
+            print(f"Fold {fold + 1} Val Loss: {test_loss:.4f}")
     
-    # Only print summary if not tuning
     if not is_tuning:
         test_losses = [r['test_loss'] for r in fold_results]
         print(f"\n{'='*50}")
         print(f"Cross-Validation Results:")
         print(f"{'='*50}")
-        print(f"Mean Test Loss: {np.mean(test_losses):.4f} (+/- {np.std(test_losses):.4f})")
-        print(f"Min Test Loss: {np.min(test_losses):.4f}")
-        print(f"Max Test Loss: {np.max(test_losses):.4f}")
+        print(f"Mean Val Loss: {np.mean(test_losses):.4f} (+/- {np.std(test_losses):.4f})")
+        print(f"Min Val Loss: {np.min(test_losses):.4f}")
+        print(f"Max Val Loss: {np.max(test_losses):.4f}")
     
     return fold_results

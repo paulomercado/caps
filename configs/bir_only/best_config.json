@@ -1,13 +1,13 @@
 {
-    "hidden_size": 512,
-    "num_layers": 3,
-    "dropout": 0.24032369912316004,
+    "hidden_size": 128,
+    "num_layers": 4,
+    "dropout": 0.1889135957641032,
     "use_attention": true,
-    "lr": 0.0014812106706509774,
-    "wd": 2.6530037124934053e-06,
-    "factor": 0.6624946376426558,
-    "patience": 5,
-    "batch_size": 32,
+    "lr": 0.0021129081445543686,
+    "wd": 1.2176976392598934e-05,
+    "factor": 0.5693725009945781,
+    "patience": 20,
+    "batch_size": 64,
     "seq_len": 12,
     "features": [
         "BIR",
@@ -18,9 +18,7 @@
         "Pop_disagg"
     ],
     "labels": [
-        "BIR",
-        "BOC",
-        "Other Offices"
+        "BIR"
     ],
     "dummy_vars": [
         "COVID-19",
@@ -29,5 +27,5 @@
         "FIST",
         "BIR_COMM"
     ],
-    "experiment_name": "taxrevdisagg_alldummies"
+    "experiment_name": "bir_only"
 }
