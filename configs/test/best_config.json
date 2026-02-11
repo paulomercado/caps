@@ -1,19 +1,21 @@
 {
-    "hidden_size": 50,
-    "num_layers": 2,
-    "dropout": 0.4032369912316004,
+    "hidden_size": 48,
+    "num_layers": 3,
+    "dropout": 0.18207575218308963,
     "use_attention": true,
-    "lr": 0.0054812106706509774,
-    "wd": 2.6530037124934053e-06,
-    "factor": 0.5624946376426558,
-    "patience": 5,
-    "batch_size": 32,
-    "seq_len": 12,
-
-    "use_lags": true, 
-    "use_seasonal": true, 
-    "lag_periods": [1, 3, 12],
-
+    "use_branches": true,
+    "lr": 0.0007548504587260791,
+    "wd": 1.1553587443009522e-05,
+    "factor": 0.3958917762791141,
+    "patience": 10,
+    "batch_size": 64,
+    "seq_len": 24,
+    "l1_lambda": 2.1276618569799126e-05,
+    "lag_periods": [
+        1,
+        3,6,
+        12
+    ],
     "features": [
         "BIR",
         "BOC",
@@ -34,8 +36,5 @@
         "FIST",
         "BIR_COMM"
     ],
-
-
-
     "experiment_name": "test"
 }

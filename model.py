@@ -66,9 +66,8 @@ class SimpleGRUModel(nn.Module):
         
     
 class GRUModel(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, num_layers=3, dropout=0.3,
-                 use_branches=True, use_attention=True, use_residual=False, 
-                 num_attention_heads=2, use_se=False):
+    def __init__(self, input_size, hidden_size, output_size, num_layers=3, dropout=0.3,  
+                 num_attention_heads=2, args = None):
         """
         GRU model with multiple literature-backed improvements:
         - Residual connections (He et al., 2016)
@@ -89,23 +88,21 @@ class GRUModel(nn.Module):
             use_se: Use Squeeze-and-Excitation blocks
         """
         super().__init__()
-        
+
         self.hidden_size = hidden_size
         self.output_size = output_size  
         self.num_layers = num_layers    
-        self.use_residual = use_residual
-        self.use_attention = use_attention
-        self.use_branches = use_branches
-        self.use_se = use_se
+
+        self.use_attention = args.use_attention if hasattr(args, 'use_attention') else False
+        self.use_branches = args.use_branches if hasattr(args, 'use_branches') else True
+        self.use_se = args.use_se if hasattr(args, 'use_se') else False
         
         # GRU backbone
         self.gru = nn.GRU(input_size, hidden_size, num_layers, 
                          batch_first=True, dropout=dropout if num_layers > 1 else 0)
         
-        self.post_gru_dropout = nn.Dropout(dropout * 0.7)
-        self.post_attention_dropout = nn.Dropout(dropout * 0.5)
         # Multi-head attention (Vaswani et al., 2017)
-        if use_attention:
+        if self.use_attention:
             self.multihead_attention = nn.MultiheadAttention(
                 hidden_size, num_attention_heads, dropout=dropout*0.5, batch_first=True
             )
@@ -113,14 +110,10 @@ class GRUModel(nn.Module):
         
         # Layer normalization (Ba et al., 2016)
         self.layer_norm = nn.LayerNorm(hidden_size)
-        
-        # Shared layers with residual (He et al., 2016)
-        self.fc_shared1 = nn.Linear(hidden_size, hidden_size)
-        self.fc_shared2 = nn.Linear(hidden_size, hidden_size)
-        self.dropout_shared = nn.Dropout(dropout)
+
         
         # Squeeze-and-Excitation (Hu et al., 2018)
-        if use_se:
+        if self.use_se:
             # Adaptive reduction based on hidden_size
             reduction = max(4, hidden_size // 16)  # FIXED: min reduction of 4
             self.se_block = SEBlock(hidden_size, reduction=reduction)
@@ -128,16 +121,13 @@ class GRUModel(nn.Module):
         self.relu = nn.ReLU()
         
         # Output branches
-        if use_branches:
+        if self.use_branches:
             self.branches = nn.ModuleList([
                 nn.Sequential(
-                    nn.Linear(hidden_size, hidden_size),
+                    nn.Linear(hidden_size, hidden_size // 2),  # Shared bottleneck
                     nn.ReLU(),
                     nn.Dropout(dropout * 0.3),
-                    nn.Linear(hidden_size, hidden_size // 2),
-                    nn.ReLU(),
-                    nn.Dropout(dropout * 0.3),
-                    nn.Linear(hidden_size // 2, 1)
+                    nn.Linear(hidden_size // 2, 1)  # Final output: 1 value
                 ) for _ in range(output_size)
             ])
         else:
@@ -145,13 +135,13 @@ class GRUModel(nn.Module):
                 nn.Linear(hidden_size, hidden_size // 2),
                 nn.ReLU(),
                 nn.Dropout(dropout),
-                nn.Linear(hidden_size // 2, output_size)
+                nn.Linear(hidden_size // 2, output_size) 
             )
     
     def forward(self, x):
         # GRU encoding
         gru_out, _ = self.gru(x)
-        gru_out = self.post_gru_dropout(gru_out)
+
         # Multi-head attention
         if self.use_attention:
             attn_out, _ = self.multihead_attention(gru_out, gru_out, gru_out)
@@ -162,22 +152,6 @@ class GRUModel(nn.Module):
         
         # Layer norm
         out = self.layer_norm(context)
-        
-        # Residual block 1
-        identity1 = out
-        out = self.fc_shared1(out)
-        out = self.relu(out)
-        out = self.dropout_shared(out)
-        if self.use_residual:
-            out = out + identity1
-        
-        # Residual block 2
-        identity2 = out
-        out = self.fc_shared2(out)
-        out = self.relu(out)
-        out = self.dropout_shared(out)
-        if self.use_residual:
-            out = out + identity2
         
         # Squeeze-and-Excitation
         if self.use_se:

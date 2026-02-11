@@ -149,7 +149,7 @@ def load_dataset(args):
         'output_size': cv_labels.shape[1]
     }
 
-def train_model(model, dataloader, device, optimizer, criterion):
+def train_model(model, dataloader, device, optimizer, criterion, l1_lambda):
 
     model.train()
     total_loss = 0.0
@@ -163,6 +163,10 @@ def train_model(model, dataloader, device, optimizer, criterion):
         outputs = model(inputs)
         loss = criterion(outputs, targets)
         
+        if l1_lambda > 0:
+            l1_norm = sum(p.abs().sum() for p in model.parameters())
+            loss = loss + l1_lambda * l1_norm
+
         loss.backward()
         optimizer.step()
 
@@ -194,6 +198,13 @@ def evaluate(model, dataloader, device, criterion, args):
 
     return avg_loss, all_preds
 
+def warmup_lr(optimizer, base_lr, epoch, warmup_epochs):
+    """Apply learning rate warmup based on epoch number"""
+    if epoch <= warmup_epochs:
+        lr = base_lr * epoch / warmup_epochs
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = lr
+
 def run(model, train_loader, val_loader, test_loader, args, fold=None):
     """
     Train and evaluate model
@@ -208,7 +219,7 @@ def run(model, train_loader, val_loader, test_loader, args, fold=None):
     """
     
     set_seed(args.seed if hasattr(args, 'seed') else 1)
-    
+
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.wd)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, 
@@ -220,7 +231,10 @@ def run(model, train_loader, val_loader, test_loader, args, fold=None):
     val_losses = []
     is_tuning = hasattr(args, 'tuning_mode') and args.tuning_mode
     for e in range(args.epoch):
-        train_loss = train_model(model, train_loader, args.device, optimizer, args.train_criterion)
+
+        warmup_lr(optimizer, args.lr, e + 1, 10)
+
+        train_loss = train_model(model, train_loader, args.device, optimizer, args.train_criterion, args.l1_lambda)
         val_loss, _ = evaluate(model, val_loader, args.device, args.train_criterion, args)
         scheduler.step(val_loss)
         train_losses.append(train_loss)
@@ -311,11 +325,8 @@ def crossval(data, labels, args, n_splits=5):  # REMOVED: test_data, test_labels
             output_size=output_size,
             num_layers=args.num_layers,
             dropout=args.dropout,
-            use_branches=getattr(args, 'use_branches', True),
-            use_attention=getattr(args, 'use_attention', True),
-            use_residual=getattr(args, 'use_residual', False),
             num_attention_heads=getattr(args, 'num_attention_heads', 4),
-            use_se=getattr(args, 'use_se', True)
+            args=args
         ).to(args.device)
         
         # Train and evaluate on validation fold
