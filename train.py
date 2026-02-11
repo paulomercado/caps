@@ -7,8 +7,8 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from model import GRUModel
-from data import inverse_transform, transform_data, TimeSeriesDataset, split_data  
+import model as mod
+import data as dt
 
 from sklearn.model_selection import TimeSeriesSplit
 
@@ -59,7 +59,7 @@ def load_dataset(args):
     btr_data = pd.read_csv(os.path.join(data_dir, "cordata.csv"))
     btr_data = btr_data.set_index("Date")
 
-    macro_data = pd.read_csv(os.path.join(data_dir, "disaggregated.csv"))
+    macro_data = pd.read_csv(os.path.join(data_dir, "disaggregated.csv")).fillna(0)
     macro_data = macro_data.rename(columns={'Unnamed: 3': 'Date'}).set_index('Date')
 
     dummy = pd.read_csv(os.path.join(data_dir, "dummy.csv")).fillna(0)
@@ -87,22 +87,44 @@ def load_dataset(args):
     label_cols = args.labels if hasattr(args, 'labels') else ['BIR', 'BOC', 'Other Offices',"Non-tax Revenues", "Expenditures"]
     dummy_vars = args.dummy_vars if hasattr(args, 'dummy_vars') else ['COVID-19','TRAIN','CREATE','FIST','BIR_COMM']
 
+    use_lags = getattr(args, 'use_lags', True)
+
+    df = dt.add_seasonal_features(df)
+
+    if use_lags:
+        df = dt.add_lag_features(df, label_cols, args.lag_periods)
+
+    
     feature_dfs = []
     
-    # Add main features (can now come from any source)
+    # Add main features
     for col in feature_cols:
         if col in df.columns:
             feature_dfs.append(df[[col]])
         else:
             print(f"Warning: Feature '{col}' not found in data")
 
+    if use_lags:
+        lag_cols = [col for col in df.columns if '_lag_' in col]
+        if lag_cols:
+            feature_dfs.append(df[lag_cols])
+
+
     if dummy_vars:
-        # Validate that dummy vars exist
-        available_dummies = dummy.columns.tolist()
-        valid_dummies = [d for d in dummy_vars if d in available_dummies]
-        
-        if valid_dummies:
-            feature_dfs.append(dummy[valid_dummies])
+        available_dummies = [d for d in dummy_vars if d in df.columns]
+    
+        if available_dummies:
+            feature_dfs.append(df[available_dummies])  
+            
+    seasonal_cols = ['month_sin', 'month_cos', 'quarter_sin', 'quarter_cos', 
+                     'is_tax_season', 'is_year_end']
+    
+    use_seasonal = getattr(args, 'use_seasonal', True)
+    if use_seasonal:
+        available_seasonal = [col for col in seasonal_cols if col in df.columns]
+
+        if available_seasonal:
+            feature_dfs.append(df[available_seasonal])
 
     # Create X and y
     X = pd.concat(feature_dfs, axis=1).values.copy()
@@ -110,8 +132,8 @@ def load_dataset(args):
     y = df[label_cols].values.copy()
 
     # Split into train/val/test
-    train_data, val_data, test_data = split_data(X)
-    train_labels, val_labels, test_labels = split_data(y)
+    train_data, val_data, test_data = dt.split_data(X)
+    train_labels, val_labels, test_labels = dt.split_data(y)
     
     # Combine train + val for cross-validation
     cv_data = np.concatenate([train_data, val_data], axis=0)
@@ -220,7 +242,7 @@ def run(model, train_loader, val_loader, test_loader, args, fold=None):
         # Final model run
         scaler_name = f"Transforms/{exp_name}/labels_scaled.pkl"
     
-    inversed_test_preds = inverse_transform(test_preds, scaler_name)
+    inversed_test_preds = dt.inverse_transform(test_preds, scaler_name)
     
     # Get corresponding actual labels from test_loader 
     actual_labels = []
@@ -229,7 +251,7 @@ def run(model, train_loader, val_loader, test_loader, args, fold=None):
     actual_labels = torch.cat(actual_labels, dim=0).cpu().numpy()
     
     # Inverse transform actual labels 
-    inversed_actual = inverse_transform(actual_labels, scaler_name)
+    inversed_actual = dt.inverse_transform(actual_labels, scaler_name)
     
     # Calculate test loss
     test_loss = args.test_criterion(
@@ -265,17 +287,17 @@ def crossval(data, labels, args, n_splits=5):  # REMOVED: test_data, test_labels
         
         # Scale data
         set_seed(1)
-        train_data_scaled = transform_data(train_data_fold, f"Transforms/{exp_name}/train_scaled_{fold}.pkl")
-        train_labels_scaled = transform_data(train_labels_fold, f"Transforms/{exp_name}/labels_scaled_{fold}.pkl")
-        val_data_scaled = transform_data(val_data_fold, f"Transforms/{exp_name}/train_scaled_{fold}.pkl")
-        val_labels_scaled = transform_data(val_labels_fold, f"Transforms/{exp_name}/labels_scaled_{fold}.pkl")
+        train_data_scaled = dt.transform_data(train_data_fold, f"Transforms/{exp_name}/train_scaled_{fold}.pkl")
+        train_labels_scaled = dt.transform_data(train_labels_fold, f"Transforms/{exp_name}/labels_scaled_{fold}.pkl")
+        val_data_scaled = dt.transform_data(val_data_fold, f"Transforms/{exp_name}/train_scaled_{fold}.pkl")
+        val_labels_scaled = dt.transform_data(val_labels_fold, f"Transforms/{exp_name}/labels_scaled_{fold}.pkl")
         
         input_size = train_data_scaled.shape[1]
         output_size = train_labels_scaled.shape[1]
         
         # Create datasets
-        train_dataset = TimeSeriesDataset(train_data_scaled, train_labels_scaled, seq_len=args.seq_len)
-        val_dataset = TimeSeriesDataset(val_data_scaled, val_labels_scaled, seq_len=args.seq_len)
+        train_dataset = dt.TimeSeriesDataset(train_data_scaled, train_labels_scaled, seq_len=args.seq_len)
+        val_dataset = dt.TimeSeriesDataset(val_data_scaled, val_labels_scaled, seq_len=args.seq_len)
         
         # Create loaders
         train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=False)
@@ -283,7 +305,7 @@ def crossval(data, labels, args, n_splits=5):  # REMOVED: test_data, test_labels
         
         # Create fresh model for this fold
         set_seed(1)
-        model = GRUModel(
+        model = mod.GRUModel(
             input_size=input_size,
             hidden_size=args.hidden_size,
             output_size=output_size,

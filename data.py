@@ -1,8 +1,11 @@
-from functools import reduce
 import pandas as pd
+import numpy as np
+
 import torch
 from torch.utils.data import Dataset
+
 from sklearn.preprocessing import MinMaxScaler
+
 import pickle
 import os
 
@@ -17,6 +20,54 @@ class TimeSeriesDataset(Dataset):
         
     def __getitem__(self, idx):
         return (self.X[idx:idx+self.seq_len], self.y[idx+self.seq_len])
+
+def add_lag_features(df, target_cols, lags=[1, 3, 12]):
+    """    
+    Args:
+        df: DataFrame with time series data
+        target_cols: Columns to create lags for
+        lags: [1, 3, 12] - month, quarter, year lags
+    """
+    df = df.copy()
+    
+    for col in target_cols:
+        # Simple lags: 1, 3, 12
+        for lag in lags:
+            df[f'{col}_lag_{lag}'] = df[col].shift(lag)
+    
+    # Drop rows with NaN from lag_12 (first 12 rows)
+    df = df.dropna()
+    
+    return df
+
+def add_seasonal_features(df):
+    """
+    Add cyclical seasonal encoding.
+    
+    Based on:
+    - Hyndman & Athanasopoulos (2021): Seasonal decomposition
+    - Makridakis et al. (2020): M4 competition best practices
+    """
+    df = df.copy()
+    
+    # Cyclical encoding (better than one-hot for neural networks)
+    month = df.index.month
+    df['month_sin'] = np.sin(2 * np.pi * month / 12)
+    df['month_cos'] = np.cos(2 * np.pi * month / 12)
+    
+    quarter = df.index.quarter  
+    df['quarter_sin'] = np.sin(2 * np.pi * quarter / 4)
+    df['quarter_cos'] = np.cos(2 * np.pi * quarter / 4)
+    
+    # Philippine tax calendar indicators
+    # April 15 - individual tax deadline
+    # April 30 - corporate tax deadline
+    df['is_tax_season'] = df.index.month.isin([3, 4, 5]).astype(int)
+    
+    # December year-end collections
+    df['is_year_end'] = (df.index.month == 12).astype(int)
+    
+    return df
 
 def transform_data(data, save_path="Transforms/default/scaler.pkl"):
     """Transform data and save scaler"""
