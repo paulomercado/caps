@@ -16,13 +16,14 @@ def ray_train(config):
     )
 
     data_args = Arguments(
-        features=config.get('features', ['BIR', 'BOC', 'Other Offices',"Non-tax Revenues", "Expenditures", 'TotalTrade_PHPMN', 'NominalGDP_disagg', 'Pop_disagg']),
-        labels=config.get('labels', ['BIR', 'BOC', 'Other Offices',"Non-tax Revenues", "Expenditures"]),
-        dummy_vars=config.get('dummy_vars', ['COVID-19','TRAIN','CREATE','FIST','BIR_COMM']),
+        features=config.get('features', ['BIR', 'BOC', 'Other Offices', "Non-tax Revenues", "Expenditures", 'TotalTrade_PHPMN', 'NominalGDP_disagg', 'Pop_disagg']),
+        labels=config.get('labels', ['BIR', 'BOC', 'Other Offices', "Non-tax Revenues", "Expenditures"]),
+        dummy_vars=config.get('dummy_vars', ['COVID-19', 'TRAIN', 'CREATE', 'FIST', 'BIR_COMM']),
         experiment_name=config.get('experiment_name', 'default'),
-        lag_periods=config.get('lag_periods', [1, 2, 3]),  # Add this line
-        use_branches=config.get('use_branches', True),  # Add this too if you want to control it
-        use_attention=config.get('use_attention', True)
+        lag_periods=config.get('lag_periods', [1, 3, 12]),
+        use_branches=config.get('use_branches', True),
+        use_attention=config.get('use_attention', True),
+        use_seasonal=config.get('use_seasonal', False),   # ← missing from your current version
     )
     # Load dataset
     dataset = load_dataset(data_args)
@@ -57,9 +58,13 @@ def ray_train(config):
         args=args,
         n_splits=5
     )
-    
-    # Report results
     mean_loss = np.mean([r['test_loss'] for r in fold_results])
     std_loss = np.std([r['test_loss'] for r in fold_results])
-    
-    tune.report({"loss": mean_loss, "std": std_loss})  # Change from session.report to tune.report
+    # Report results
+    all_label_keys = fold_results[0]['per_label_mape'].keys()
+    per_label_means = {
+        k: float(np.mean([r['per_label_mape'][k] for r in fold_results]))
+        for k in all_label_keys
+    }
+
+    tune.report({"loss": mean_loss, "std": std_loss, **per_label_means})  # Change from session.report to tune.report

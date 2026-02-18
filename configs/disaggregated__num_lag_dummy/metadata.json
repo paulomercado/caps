@@ -1,0 +1,15 @@
+{
+    "target": "disaggregated",
+    "config": "num_lag_dummy",
+    "best_loss": 26.668254852294922,
+    "per_label_mape": {
+        "loss_BIR": 16.416777038574217,
+        "loss_BOC": 11.584333801269532,
+        "loss_Other Offices": 34.04210586547852,
+        "loss_Non-tax Revenues": 58.02665977478027,
+        "loss_Expenditures": 13.271400451660156
+    },
+    "best_std": 10.386134991556649,
+    "num_trials": 100,
+    "timestamp": "2026-02-18T08:03:23.603463"
+}

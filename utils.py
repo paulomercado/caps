@@ -70,12 +70,29 @@ def explain_model(model, data_loader, args, num_samples=100):
     """
     model.eval()
     
-    # Get feature names
+    # Get feature names - BUILD COMPLETE LIST
     feature_names = []
+    
+    # 1. Base features
     if hasattr(args, 'features'):
         feature_names.extend(args.features)
+    
+    # 2. Lag features
+    if hasattr(args, 'labels') and hasattr(args, 'lag_periods'):
+        for label in args.labels:
+            for lag in args.lag_periods:
+                feature_names.append(f'{label}_lag_{lag}')
+    
+    # 3. Dummy variables
     if hasattr(args, 'dummy_vars'):
         feature_names.extend(args.dummy_vars)
+    
+    # 4. Seasonal features (if enabled)
+    use_seasonal = getattr(args, 'use_seasonal', False)
+    if use_seasonal:
+        seasonal_features = ['month_sin', 'month_cos', 'quarter_sin', 'quarter_cos', 
+                           'is_tax_season', 'is_year_end']
+        feature_names.extend(seasonal_features)
     
     # Collect background and test data
     background_data = []
@@ -94,15 +111,12 @@ def explain_model(model, data_loader, args, num_samples=100):
             break
     
     test_data = np.vstack(test_data)[:20]  # Use first 20 samples
+
     
     # Create prediction wrapper for SHAP
     def model_predict(x):
         """Wrapper function that takes 2D array and returns predictions"""
-        # Convert numpy array to tensor
         x_tensor = torch.FloatTensor(x).to(args.device)
-        
-        # Add sequence dimension (batch, 1, features)
-        # Since we're only using last timestep, sequence length = 1
         x_tensor = x_tensor.unsqueeze(1)
         
         with torch.no_grad():

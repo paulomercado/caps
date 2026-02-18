@@ -1,0 +1,13 @@
+{
+    "target": "aggregated",
+    "config": "num_lag_dummy",
+    "best_loss": 26.532346534729005,
+    "per_label_mape": {
+        "loss_Tax Revenues": 14.098495483398438,
+        "loss_Non-tax Revenues": 54.10921287536621,
+        "loss_Expenditures": 11.389331817626953
+    },
+    "best_std": 14.624258580563241,
+    "num_trials": 500,
+    "timestamp": "2026-02-18T01:26:47.002257"
+}

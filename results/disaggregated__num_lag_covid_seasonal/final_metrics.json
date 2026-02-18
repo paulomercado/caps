@@ -1,0 +1,11 @@
+{
+    "test_loss": 25.94278335571289,
+    "per_label_mape": {
+        "loss_BIR": 18.925901412963867,
+        "loss_BOC": 19.799110412597656,
+        "loss_Other Offices": 28.465011596679688,
+        "loss_Non-tax Revenues": 42.09456253051758,
+        "loss_Expenditures": 20.429325103759766
+    },
+    "timestamp": "2026-02-18T12:48:09.891402"
+}

@@ -19,17 +19,51 @@ class Arguments:
 class RMSELoss(nn.Module):
     def __init__(self):
         super(RMSELoss, self).__init__()
-        self.mse = nn.MSELoss()
-    def forward(self, predictions, targets):       
-        return torch.sqrt(self.mse(predictions, targets) + 1e-6)
+
+    def forward(self, predictions, targets):
+        # Per-label RMSE — same structure as MAPELoss
+        mse_per_label = torch.mean((predictions - targets) ** 2, dim=0)  # shape: (n_labels,)
+        rmse_per_label = torch.sqrt(mse_per_label + 1e-6)                # shape: (n_labels,)
+        return torch.mean(rmse_per_label)   
         
 class MAPELoss(nn.Module):
-    def __init__(self, epsilon=1e-8):
+    def __init__(self, epsilon=1e-8, per_label=False):
         super(MAPELoss, self).__init__()
-        self.epsilon = epsilon  # Small constant to prevent division by zero
+        self.epsilon = epsilon
+        self.per_label = per_label
 
     def forward(self, output, target):
-        return torch.mean(torch.abs((target - output) / (target + self.epsilon)))*100
+        mape = torch.abs((target - output) / (target + self.epsilon)) * 100
+        if self.per_label:
+            return mape.mean(dim=0)   # shape: (n_labels,) — one MAPE per label
+        return mape.mean()
+
+class EarlyStopper:
+    def __init__(self, patience=1, min_delta=0):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.counter = 0
+        self.min_validation_loss = float('inf')
+        self.best_model_state = None
+        
+    def early_stop(self, validation_loss):
+        if validation_loss < self.min_validation_loss:
+            self.min_validation_loss = validation_loss
+            self.counter = 0
+        elif validation_loss >= (self.min_validation_loss + self.min_delta):
+            self.counter += 1
+            if self.counter >= self.patience:
+                return True
+        return False
+    
+    def save_checkpoint(self, model):
+        """Save model state"""
+        self.best_model_state = {k: v.cpu().clone() for k, v in model.state_dict().items()}
+        
+    def load_best_model(self, model):
+        """Load best model state"""
+        if self.best_model_state is not None:
+            model.load_state_dict(self.best_model_state)
 
 def set_seed(seed=None):
     if seed is None:
@@ -206,74 +240,88 @@ def warmup_lr(optimizer, base_lr, epoch, warmup_epochs):
             param_group['lr'] = lr
 
 def run(model, train_loader, val_loader, test_loader, args, fold=None):
-    """
-    Train and evaluate model
-    
-    Args:
-        model: PyTorch model
-        train_loader: Training data loader
-        val_loader: Validation data loader
-        test_loader: Test data loader
-        args: Arguments object containing all hyperparameters
-        fold: Optional fold number for cross-validation
-    """
     
     set_seed(args.seed if hasattr(args, 'seed') else 1)
 
+    # Setup
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.wd)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, 
-        factor=args.factor, 
-        patience=args.patience
+        optimizer, factor=args.factor, patience=args.patience
     )
     
+    # Flags and settings
+    is_tuning = getattr(args, 'tuning_mode', False)
+    is_cv = fold is not None
+    use_early_stopping = getattr(args, 'early_stopping_patience', 0) > 0
+    
+    early_stopper = EarlyStopper(
+        patience=args.early_stopping_patience,
+        min_delta=getattr(args, 'early_stopping_min_delta', 0)
+    ) if use_early_stopping else None
+
     train_losses = []
     val_losses = []
-    is_tuning = hasattr(args, 'tuning_mode') and args.tuning_mode
+
+    # Training loop
     for e in range(args.epoch):
-
         warmup_lr(optimizer, args.lr, e + 1, 10)
-
         train_loss = train_model(model, train_loader, args.device, optimizer, args.train_criterion, args.l1_lambda)
         val_loss, _ = evaluate(model, val_loader, args.device, args.train_criterion, args)
         scheduler.step(val_loss)
         train_losses.append(train_loss)
         val_losses.append(val_loss)
 
-        if not is_tuning and ((e + 1) % 100 == 0 or e == 0):
-            fold_prefix = f"Fold {fold + 1} - " if fold is not None else ""
-            print(f"{fold_prefix}Epoch {e+1}/{args.epoch} - Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
+        # Early stopping
+        if early_stopper:
+            if val_loss < early_stopper.min_validation_loss:
+                early_stopper.save_checkpoint(model)
+            
+            if early_stopper.early_stop(val_loss):
+                if not is_tuning:
+                    prefix = f"Fold {fold + 1} - " if is_cv else ""
+                    print(f"{prefix}Early stopping triggered at epoch {e+1}/{args.epoch}")
+                break
 
+        # Progress logging
+        if not is_tuning and ((e + 1) % 100 == 0 or e == 0):
+            prefix = f"Fold {fold + 1} - " if is_cv else ""
+            print(f"{prefix}Epoch {e+1}/{args.epoch} - Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
+
+    # Restore best model
+    if early_stopper:
+        early_stopper.load_best_model(model)
+        if not is_tuning:
+            print(f"Restored best model (val loss: {early_stopper.min_validation_loss:.4f})")
+
+    # Evaluate on test set
     _, test_preds = evaluate(model, test_loader, args.device, args.test_criterion, args)
 
-    # Inverse transform using fold-specific or default scaler
-    exp_name = args.experiment_name if hasattr(args, 'experiment_name') else 'default'
-    
-    if fold is not None:
-        # Cross-validation run
-        scaler_name = f"Transforms/{exp_name}/labels_scaled_{fold}.pkl"
-    else:
-        # Final model run
-        scaler_name = f"Transforms/{exp_name}/labels_scaled.pkl"
+    # Inverse transform
+    exp_name = getattr(args, 'experiment_name', 'default')
+    scaler_suffix = f"_{fold}.pkl" if is_cv else ".pkl"
+    scaler_name = f"Transforms/{exp_name}/labels_scaled{scaler_suffix}"
     
     inversed_test_preds = dt.inverse_transform(test_preds, scaler_name)
     
-    # Get corresponding actual labels from test_loader 
-    actual_labels = []
-    for _, targets in test_loader:
-        actual_labels.append(targets)
-    actual_labels = torch.cat(actual_labels, dim=0).cpu().numpy()
-    
-    # Inverse transform actual labels 
+    actual_labels = torch.cat([targets for _, targets in test_loader], dim=0).cpu().numpy()
     inversed_actual = dt.inverse_transform(actual_labels, scaler_name)
-    
-    # Calculate test loss
-    test_loss = args.test_criterion(
-        torch.tensor(inversed_test_preds), 
-        torch.tensor(inversed_actual)
+
+    # Compute per-label MAPE
+    label_cols = getattr(args, 'labels', [])
+    epsilon = 1e-8
+    per_label_mape = np.mean(
+        np.abs((inversed_actual - inversed_test_preds) / (inversed_actual + epsilon)) * 100,
+        axis=0
     )
     
-    return test_loss, inversed_test_preds, train_losses, val_losses
+    per_label_mape_dict = {
+        f"loss_{label_cols[i] if i < len(label_cols) else f'label_{i}'}": float(per_label_mape[i])
+        for i in range(len(per_label_mape))
+    }
+
+    test_loss = torch.tensor(float(np.mean(per_label_mape)))
+
+    return test_loss, inversed_test_preds, train_losses, val_losses, per_label_mape_dict
 
 def crossval(data, labels, args, n_splits=5):  # REMOVED: test_data, test_labels
     """
@@ -330,7 +378,7 @@ def crossval(data, labels, args, n_splits=5):  # REMOVED: test_data, test_labels
         ).to(args.device)
         
         # Train and evaluate on validation fold
-        test_loss, test_preds, train_losses, val_losses = run(
+        test_loss, test_preds, train_losses, val_losses, per_label_mape_dict = run(
             model, 
             train_loader, 
             val_loader, 
@@ -343,6 +391,7 @@ def crossval(data, labels, args, n_splits=5):  # REMOVED: test_data, test_labels
         fold_results.append({
             'fold': fold + 1,
             'test_loss': test_loss.item() if torch.is_tensor(test_loss) else test_loss,
+            'per_label_mape': per_label_mape_dict,   # e.g. {'loss_BIR': 3.2, 'loss_BOC': 4.1, ...}
             'test_preds': test_preds,
             'train_losses': train_losses,
             'val_losses': val_losses,
@@ -351,15 +400,18 @@ def crossval(data, labels, args, n_splits=5):  # REMOVED: test_data, test_labels
         })
         
         if not is_tuning:
-            print(f"Fold {fold + 1} Val Loss: {test_loss:.4f}")
+            label_str = "  ".join([f"{k}: {v:.4f}" for k, v in per_label_mape_dict.items()])
+            print(f"Fold {fold + 1} — Mean MAPE: {test_loss:.4f}  |  {label_str}")
     
     if not is_tuning:
         test_losses = [r['test_loss'] for r in fold_results]
-        print(f"\n{'='*50}")
-        print(f"Cross-Validation Results:")
-        print(f"{'='*50}")
-        print(f"Mean Val Loss: {np.mean(test_losses):.4f} (+/- {np.std(test_losses):.4f})")
-        print(f"Min Val Loss: {np.min(test_losses):.4f}")
-        print(f"Max Val Loss: {np.max(test_losses):.4f}")
+        print(f"\n{'='*50}\nCross-Validation Results:\n{'='*50}")
+        print(f"Mean MAPE: {np.mean(test_losses):.4f} (+/- {np.std(test_losses):.4f})")
+
+        # Per-label summary across folds
+        all_label_keys = fold_results[0]['per_label_mape'].keys()
+        for k in all_label_keys:
+            vals = [r['per_label_mape'][k] for r in fold_results]
+            print(f"  {k}: {np.mean(vals):.4f} (+/- {np.std(vals):.4f})")
     
     return fold_results
