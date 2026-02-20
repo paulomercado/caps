@@ -38,6 +38,34 @@ class MAPELoss(nn.Module):
             return mape.mean(dim=0)   # shape: (n_labels,) — one MAPE per label
         return mape.mean()
 
+class DirectionalLoss(nn.Module):
+    def __init__(self, alpha=0.5):
+        """
+        Combines MSE with directional penalty
+        alpha: weight for directional component (0-1)
+              0 = pure MSE, 1 = pure directional
+        """
+        super().__init__()
+        self.alpha = alpha
+        self.mse = nn.MSELoss()
+        
+    def forward(self, predictions, targets):
+        # MSE component
+        mse_loss = self.mse(predictions, targets)
+        
+        # Directional component (penalize wrong direction)
+        if predictions.shape[0] > 1:  # Need at least 2 samples
+            pred_diff = predictions[1:] - predictions[:-1]
+            target_diff = targets[1:] - targets[:-1]
+            
+            # Check if signs match (same direction)
+            direction_correct = (pred_diff * target_diff) > 0
+            direction_loss = 1 - direction_correct.float().mean()
+        else:
+            direction_loss = torch.tensor(0.0, device=predictions.device)
+        
+        return (1 - self.alpha) * mse_loss + self.alpha * direction_loss
+
 class EarlyStopper:
     def __init__(self, patience=1, min_delta=0):
         self.patience = patience
@@ -243,13 +271,11 @@ def run(model, train_loader, val_loader, test_loader, args, fold=None):
     
     set_seed(args.seed if hasattr(args, 'seed') else 1)
 
-    # Setup
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.wd)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, factor=args.factor, patience=args.patience
     )
     
-    # Flags and settings
     is_tuning = getattr(args, 'tuning_mode', False)
     is_cv = fold is not None
     use_early_stopping = getattr(args, 'early_stopping_patience', 0) > 0
@@ -262,7 +288,6 @@ def run(model, train_loader, val_loader, test_loader, args, fold=None):
     train_losses = []
     val_losses = []
 
-    # Training loop
     for e in range(args.epoch):
         warmup_lr(optimizer, args.lr, e + 1, 10)
         train_loss = train_model(model, train_loader, args.device, optimizer, args.train_criterion, args.l1_lambda)
@@ -271,32 +296,26 @@ def run(model, train_loader, val_loader, test_loader, args, fold=None):
         train_losses.append(train_loss)
         val_losses.append(val_loss)
 
-        # Early stopping
         if early_stopper:
             if val_loss < early_stopper.min_validation_loss:
                 early_stopper.save_checkpoint(model)
-            
             if early_stopper.early_stop(val_loss):
                 if not is_tuning:
                     prefix = f"Fold {fold + 1} - " if is_cv else ""
                     print(f"{prefix}Early stopping triggered at epoch {e+1}/{args.epoch}")
                 break
 
-        # Progress logging
         if not is_tuning and ((e + 1) % 100 == 0 or e == 0):
             prefix = f"Fold {fold + 1} - " if is_cv else ""
             print(f"{prefix}Epoch {e+1}/{args.epoch} - Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
 
-    # Restore best model
     if early_stopper:
         early_stopper.load_best_model(model)
         if not is_tuning:
             print(f"Restored best model (val loss: {early_stopper.min_validation_loss:.4f})")
 
-    # Evaluate on test set
     _, test_preds = evaluate(model, test_loader, args.device, args.test_criterion, args)
 
-    # Inverse transform
     exp_name = getattr(args, 'experiment_name', 'default')
     scaler_suffix = f"_{fold}.pkl" if is_cv else ".pkl"
     scaler_name = f"Transforms/{exp_name}/labels_scaled{scaler_suffix}"
@@ -306,7 +325,6 @@ def run(model, train_loader, val_loader, test_loader, args, fold=None):
     actual_labels = torch.cat([targets for _, targets in test_loader], dim=0).cpu().numpy()
     inversed_actual = dt.inverse_transform(actual_labels, scaler_name)
 
-    # Compute per-label MAPE
     label_cols = getattr(args, 'labels', [])
     epsilon = 1e-8
     per_label_mape = np.mean(
@@ -321,7 +339,8 @@ def run(model, train_loader, val_loader, test_loader, args, fold=None):
 
     test_loss = torch.tensor(float(np.mean(per_label_mape)))
 
-    return test_loss, inversed_test_preds, train_losses, val_losses, per_label_mape_dict
+    # ← now returns inversed_actual
+    return test_loss, inversed_test_preds, inversed_actual, train_losses, val_losses, per_label_mape_dict
 
 def crossval(data, labels, args, n_splits=5):  # REMOVED: test_data, test_labels
     """
