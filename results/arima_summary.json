@@ -1,35 +1,35 @@
 {
     "Tax Revenues": {
         "order": [
-            2,
             0,
-            3
-        ],
-        "gru_mape": 25.707504272460938,
-        "gru_rmse": 96481.171875,
-        "hybrid_mape": 15.725533474784376,
-        "hybrid_rmse": 52837.95428374916
-    },
-    "Non-tax Revenues": {
-        "order": [
-            1,
             0,
             1
         ],
-        "gru_mape": 55.06026840209961,
-        "gru_rmse": 31572.8203125,
-        "hybrid_mape": 43.6142657536216,
-        "hybrid_rmse": 20549.892370606725
+        "gru_mape": 17.211936950683594,
+        "gru_rmse": 77777.890625,
+        "hybrid_mape": 16.09367276315331,
+        "hybrid_rmse": 76623.85460279413
+    },
+    "Non-tax Revenues": {
+        "order": [
+            3,
+            0,
+            1
+        ],
+        "gru_mape": 42.13646697998047,
+        "gru_rmse": 24105.349609375,
+        "hybrid_mape": 41.48168194643247,
+        "hybrid_rmse": 22484.344057615188
     },
     "Expenditures": {
         "order": [
-            1,
+            3,
             0,
-            3
+            2
         ],
-        "gru_mape": 30.14325523376465,
-        "gru_rmse": 163244.8125,
-        "hybrid_mape": 14.386324951526166,
-        "hybrid_rmse": 81894.7484376322
+        "gru_mape": 26.48073387145996,
+        "gru_rmse": 157863.859375,
+        "hybrid_mape": 13.796616612842582,
+        "hybrid_rmse": 82082.19102036968
     }
 }

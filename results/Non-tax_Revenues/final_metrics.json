@@ -1,8 +1,8 @@
 {
     "label": "Non-tax Revenues",
-    "test_loss": 55.06026840209961,
+    "test_loss": 42.13645935058594,
     "per_label_mape": {
-        "loss_Non-tax Revenues": 55.06026840209961
+        "loss_Non-tax Revenues": 42.13645935058594
     },
-    "timestamp": "2026-02-21T15:19:37.800306"
+    "timestamp": "2026-02-21T19:49:53.369546"
 }

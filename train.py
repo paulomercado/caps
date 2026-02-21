@@ -136,7 +136,7 @@ def load_dataset(args):
     dummy = dummy.sort_index()
 
     # Filter by date e
-    start = pd.to_datetime("2000-01-01")
+    start = pd.to_datetime(getattr(args, 'start_date', "1992-01-01"))
     btr_data = btr_data[btr_data.index >= start]
     macro_data = macro_data[macro_data.index >= start]
     dummy = dummy[dummy.index >= start]

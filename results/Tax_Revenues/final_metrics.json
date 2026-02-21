@@ -1,8 +1,8 @@
 {
     "label": "Tax Revenues",
-    "test_loss": 25.707504272460938,
+    "test_loss": 17.211936950683594,
     "per_label_mape": {
-        "loss_Tax Revenues": 25.707504272460938
+        "loss_Tax Revenues": 17.211936950683594
     },
-    "timestamp": "2026-02-21T15:19:20.016033"
+    "timestamp": "2026-02-21T19:49:40.541814"
 }

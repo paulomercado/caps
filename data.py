@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, RobustScaler
 
 import pickle
 import os
@@ -82,7 +82,7 @@ def transform_data(data, save_path="Transforms/default/scaler.pkl"):
     if save_dir and not os.path.exists(save_dir):
         os.makedirs(save_dir, exist_ok=True)
     
-    scaler = MinMaxScaler()
+    scaler = RobustScaler()
     data_scaled = scaler.fit_transform(data)
 
     with open(save_path, "wb") as f:

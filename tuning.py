@@ -20,6 +20,7 @@ def ray_train(config):
         use_attention=config.get('use_attention', False),
         use_seasonal=config.get('use_seasonal', False),
         use_lags=config.get('use_lags', True),
+        start_date=config.get('start_date', '1992-01-01')
     )
 
     dataset = load_dataset(data_args)
