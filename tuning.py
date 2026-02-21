@@ -57,6 +57,7 @@ def ray_train(config):
         use_seasonal=config.get('use_seasonal', False),
         use_lags=config.get('use_lags', True),
         experiment_name=config.get('experiment_name', 'default'),
+        n_splits=config.get('n_splits', 5),
         # training
         seed=1,
         epoch=100,
@@ -76,7 +77,7 @@ def ray_train(config):
 
     set_seed(args.seed)
 
-    fold_results = crossval(data=args.cv_data, labels=args.cv_labels, args=args, n_splits=5)
+    fold_results = crossval(data=args.cv_data, labels=args.cv_labels, args=args)
 
     mean_loss = float(np.mean([r['test_loss'] for r in fold_results]))
     std_loss  = float(np.std([r['test_loss']  for r in fold_results]))

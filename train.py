@@ -136,7 +136,7 @@ def load_dataset(args):
     dummy = dummy.sort_index()
 
     # Filter by date e
-    start = pd.to_datetime("1992-01-01")
+    start = pd.to_datetime("2000-01-01")
     btr_data = btr_data[btr_data.index >= start]
     macro_data = macro_data[macro_data.index >= start]
     dummy = dummy[dummy.index >= start]
@@ -267,7 +267,7 @@ def warmup_lr(optimizer, base_lr, epoch, warmup_epochs):
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
 
-def run(model, train_loader, val_loader, test_loader, args, fold=None):
+def run(model, train_loader, val_loader, test_loader, args, fold=None, label_scaler=None):
     
     set_seed(args.seed if hasattr(args, 'seed') else 1)
 
@@ -320,10 +320,9 @@ def run(model, train_loader, val_loader, test_loader, args, fold=None):
     scaler_suffix = f"_{fold}.pkl" if is_cv else ".pkl"
     scaler_name = f"Transforms/{exp_name}/labels_scaled{scaler_suffix}"
     
-    inversed_test_preds = dt.inverse_transform(test_preds, scaler_name)
-    
+    inversed_test_preds = dt.inverse_transform(test_preds, scaler=label_scaler)
     actual_labels = torch.cat([targets for _, targets in test_loader], dim=0).cpu().numpy()
-    inversed_actual = dt.inverse_transform(actual_labels, scaler_name)
+    inversed_actual = dt.inverse_transform(actual_labels, scaler=label_scaler)
 
     label_cols = getattr(args, 'labels', [])
     epsilon = 1e-8
@@ -342,12 +341,12 @@ def run(model, train_loader, val_loader, test_loader, args, fold=None):
     # ← now returns inversed_actual
     return test_loss, inversed_test_preds, inversed_actual, train_losses, val_losses, per_label_mape_dict
 
-def crossval(data, labels, args, n_splits=5):  # REMOVED: test_data, test_labels
+def crossval(data, labels, args):  # REMOVED: test_data, test_labels
     """
     Cross-validation for hyperparameter tuning.
     Evaluates on validation folds within the data.
     """
-    
+    n_splits = getattr(args, 'n_splits', 5)
     tscv = TimeSeriesSplit(n_splits=n_splits)
     fold_results = []
     
@@ -368,10 +367,10 @@ def crossval(data, labels, args, n_splits=5):  # REMOVED: test_data, test_labels
         
         # Scale data
         set_seed(1)
-        train_data_scaled = dt.transform_data(train_data_fold, f"Transforms/{exp_name}/train_scaled_{fold}.pkl")
-        train_labels_scaled = dt.transform_data(train_labels_fold, f"Transforms/{exp_name}/labels_scaled_{fold}.pkl")
-        val_data_scaled = dt.transform_data(val_data_fold, f"Transforms/{exp_name}/train_scaled_{fold}.pkl")
-        val_labels_scaled = dt.transform_data(val_labels_fold, f"Transforms/{exp_name}/labels_scaled_{fold}.pkl")
+        train_data_scaled, data_scaler   = dt.transform_data(train_data_fold)
+        train_labels_scaled, label_scaler = dt.transform_data(train_labels_fold)
+        val_data_scaled   = data_scaler.transform(val_data_fold)
+        val_labels_scaled = label_scaler.transform(val_labels_fold)
         
         input_size = train_data_scaled.shape[1]
         output_size = train_labels_scaled.shape[1]
@@ -397,13 +396,14 @@ def crossval(data, labels, args, n_splits=5):  # REMOVED: test_data, test_labels
         ).to(args.device)
         
         # Train and evaluate on validation fold
-        test_loss, test_preds, train_losses, val_losses, per_label_mape_dict = run(
+        test_loss, test_preds, inversed_actual, train_losses, val_losses, per_label_mape_dict = run(
             model, 
             train_loader, 
             val_loader, 
             val_loader,  # Use val_loader for evaluation
             args,
-            fold=fold
+            fold=fold,
+            label_scaler=label_scaler
         )
         
         # Store results

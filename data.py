@@ -88,18 +88,18 @@ def transform_data(data, save_path="Transforms/default/scaler.pkl"):
     with open(save_path, "wb") as f:
         pickle.dump(scaler, f)
     
-    return data_scaled
+    return data_scaled, scaler
 
-def inverse_transform(data, load_path="Transforms/default/scaler.pkl"):
-    """Inverse transform data using saved scaler"""
-    
-    # Convert to absolute path if it's relative
-    if not os.path.isabs(load_path):
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        load_path = os.path.join(base_dir, load_path)
-    
-    with open(load_path, "rb") as f:
-        scaler = pickle.load(f)
+def inverse_transform(data, scaler=None, load_path=None):
+    """Inverse transform using a scaler object or a saved scaler file."""
+    if scaler is None:
+        if load_path is None:
+            raise ValueError("Must provide either a scaler object or a load_path.")
+        if not os.path.isabs(load_path):
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            load_path = os.path.join(base_dir, load_path)
+        with open(load_path, "rb") as f:
+            scaler = pickle.load(f)
     return scaler.inverse_transform(data)
 
 def split_data(X, use_val=True):

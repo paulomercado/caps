@@ -1,0 +1,35 @@
+{
+    "Tax Revenues": {
+        "order": [
+            2,
+            0,
+            3
+        ],
+        "gru_mape": 25.707504272460938,
+        "gru_rmse": 96481.171875,
+        "hybrid_mape": 15.725533474784376,
+        "hybrid_rmse": 52837.95428374916
+    },
+    "Non-tax Revenues": {
+        "order": [
+            1,
+            0,
+            1
+        ],
+        "gru_mape": 55.06026840209961,
+        "gru_rmse": 31572.8203125,
+        "hybrid_mape": 43.6142657536216,
+        "hybrid_rmse": 20549.892370606725
+    },
+    "Expenditures": {
+        "order": [
+            1,
+            0,
+            3
+        ],
+        "gru_mape": 30.14325523376465,
+        "gru_rmse": 163244.8125,
+        "hybrid_mape": 14.386324951526166,
+        "hybrid_rmse": 81894.7484376322
+    }
+}

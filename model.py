@@ -100,7 +100,10 @@ class GRUModel(nn.Module):
         # GRU backbone
         self.gru = nn.GRU(input_size, hidden_size, num_layers, 
                          batch_first=True, dropout=dropout if num_layers > 1 else 0)
-        
+        self.use_linear_residual = args.use_linear_residual if hasattr(args, 'use_linear_residual') else False
+
+        if self.use_linear_residual:
+            self.linear_residual = nn.Linear(input_size, output_size)
         # Multi-head attention (Vaswani et al., 2017)
         if self.use_attention:
             self.multihead_attention = nn.MultiheadAttention(
@@ -159,11 +162,14 @@ class GRUModel(nn.Module):
         
         # Output
         if self.use_branches:
-            outputs = [branch(out) for branch in self.branches]
-            return torch.cat(outputs, dim=1)
+            gru_pred = torch.cat([branch(out) for branch in self.branches], dim=1)
         else:
-            return self.fc_out(out)
+            gru_pred = self.fc_out(out)
 
+        if self.use_linear_residual:
+            gru_pred = gru_pred + self.linear_residual(x[:, -1, :])
+
+        return gru_pred
 
 class SEBlock(nn.Module):
     """Squeeze-and-Excitation (Hu et al., 2018)"""
