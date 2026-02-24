@@ -1,0 +1,52 @@
+{
+    "hidden_size": 64,
+    "num_layers": 1,
+    "dropout": 0.115968150737802,
+    "use_attention": false,
+    "use_branches": false,
+    "linear_residual": false,
+    "lr": 0.0018298347307614835,
+    "wd": 3.078625798555607e-06,
+    "batch_size": 16,
+    "seq_len": 6,
+    "l1_lambda": 1.2486712316634482e-06,
+    "train_loss_name": "quantile",
+    "factor": 0.5,
+    "patience": 5,
+    "early_stopping_patience": 75,
+    "n_splits": 5,
+    "log_transform": true,
+    "skip_log_cols": [
+        "Inflation",
+        "USDPHP"
+    ],
+    "features": [
+        "Expenditures",
+        "Tax Revenues",
+        "Non-tax Revenues",
+        "Inflation",
+        "NominalGDP_disagg",
+        "Pop_disagg",
+        "USDPHP"
+    ],
+    "dummy_vars": [
+        "COVID-19",
+        "TRAIN",
+        "CREATE",
+        "FIST",
+        "BIR_COMM"
+    ],
+    "use_seasonal": false,
+    "lag_periods": [
+        1,
+        3,
+        6,
+        12
+    ],
+    "use_lags": true,
+    "labels": [
+        "Expenditures"
+    ],
+    "experiment_name": "Expenditures_1992",
+    "start_date": "1992-01-01"
+}

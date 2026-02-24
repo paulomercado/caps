@@ -1,0 +1,45 @@
+{
+    "hidden_size": 196,
+    "num_layers": 2,
+    "dropout": 0.13972699773877645,
+    "use_attention": true,
+    "use_branches": false,
+    "linear_residual": false,
+    "lr": 0.0018257758140722798,
+    "wd": 2.3323034823459664e-05,
+    "batch_size": 16,
+    "seq_len": 24,
+    "l1_lambda": 2.0862338767331686e-05,
+    "train_loss_name": "huber",
+    "factor": 0.5,
+    "patience": 5,
+    "early_stopping_patience": 30,
+    "n_splits": 3,
+    "features": [
+        "Other Offices",
+        "Tax Revenues",
+        "NominalGDP_disagg",
+        "Pop_disagg",
+        "USDPHP"
+    ],
+    "dummy_vars": [
+        "COVID-19",
+        "TRAIN",
+        "CREATE",
+        "FIST",
+        "BIR_COMM"
+    ],
+    "use_seasonal": false,
+    "lag_periods": [
+        1,
+        3,
+        6,
+        12
+    ],
+    "use_lags": true,
+    "labels": [
+        "Other Offices"
+    ],
+    "experiment_name": "Other_Offices_2007",
+    "start_date": "2007-01-01"
+}

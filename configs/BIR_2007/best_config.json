@@ -1,0 +1,46 @@
+{
+    "hidden_size": 128,
+    "num_layers": 3,
+    "dropout": 0.13389430598272853,
+    "use_attention": false,
+    "use_branches": false,
+    "linear_residual": false,
+    "lr": 0.0059618997842672775,
+    "wd": 1.1266877152051116e-05,
+    "batch_size": 32,
+    "seq_len": 6,
+    "l1_lambda": 3.2416984625675274e-05,
+    "train_loss_name": "huber",
+    "factor": 0.5,
+    "patience": 5,
+    "early_stopping_patience": 30,
+    "n_splits": 3,
+    "features": [
+        "BIR",
+        "Tax Revenues",
+        "NominalGDP_disagg",
+        "Pop_disagg",
+        "USDPHP",
+        "TotalTrade_PHPMN"
+    ],
+    "dummy_vars": [
+        "COVID-19",
+        "TRAIN",
+        "CREATE",
+        "FIST",
+        "BIR_COMM"
+    ],
+    "use_seasonal": false,
+    "lag_periods": [
+        1,
+        3,
+        6,
+        12
+    ],
+    "use_lags": true,
+    "labels": [
+        "BIR"
+    ],
+    "experiment_name": "BIR_2007",
+    "start_date": "2007-01-01"
+}

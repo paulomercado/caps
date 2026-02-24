@@ -7,6 +7,8 @@ from scipy import stats
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 
 def plot_residual_diagnostics(actual, pred, label, save_dir=None):
+    actual    = np.array(actual).flatten()
+    pred      = np.array(pred).flatten()
     residuals = actual - pred
     max_lags  = min(24, len(residuals) // 2 - 1)
 
@@ -41,7 +43,7 @@ def plot_qq(actual_dict, pred_dict, label_cols, save_path=None):
         axes = [axes]
 
     for ax, label in zip(axes, label_cols):
-        residuals = actual_dict[label] - pred_dict[label]
+        residuals = np.array(actual_dict[label]).flatten() - np.array(pred_dict[label]).flatten()
         stats.probplot(residuals, dist="norm", plot=ax)
         ax.set_title(f'Q-Q Plot — {label}')
         ax.get_lines()[1].set_color('red')
@@ -63,52 +65,22 @@ def plot_training_history(train_losses, val_losses):
     plt.tight_layout()
     plt.show()
 
-def plot_test_predictions(test_preds, test_loader, args, scaler_path=None):
-    # Get experiment name
-    exp_name = args.experiment_name if hasattr(args, 'experiment_name') else 'final'
-    
-    # Use provided scaler path or construct from experiment name with folder structure
-    if scaler_path is None:
-        scaler_path = f"Transforms/{exp_name}/labels_scaled.pkl"  # ← Added folder
-    
-    # Get actual test labels
-    actual_labels = []
-    for _, targets in test_loader:
-        actual_labels.append(targets)
-    actual_labels = torch.cat(actual_labels, dim=0).cpu().numpy()
-    
-    # Inverse transform
-    inversed_actual = inverse_transform(actual_labels, scaler_path)
-    
-    # Get output names from config
-    output_names = args.labels if hasattr(args, 'labels') else ['Output']
-    
-    # Plot predictions vs actual
-    n_outputs = test_preds.shape[1] if len(test_preds.shape) > 1 else 1
-    
-    if n_outputs > 1:
-        for i in range(n_outputs):
-            plt.figure(figsize=(12, 6))
-            plt.plot(inversed_actual[:, i], label='Actual', linewidth=2)
-            plt.plot(test_preds[:, i], label='Predicted', linewidth=2, alpha=0.7)
-            plt.xlabel('Time Step')
-            plt.ylabel('Value')
-            plt.title(f'{output_names[i]}: Predictions vs Actual')
-            plt.legend()
-            plt.grid(True, alpha=0.3)
-            plt.tight_layout()
-            plt.show()
-    else:
-        plt.figure(figsize=(12, 6))
-        plt.plot(inversed_actual, label='Actual', linewidth=2)
-        plt.plot(test_preds, label='Predicted', linewidth=2, alpha=0.7)
-        plt.xlabel('Time Step')
-        plt.ylabel('Value')
-        plt.title(f'{output_names[0] if output_names else "Output"}: Predictions vs Actual')
-        plt.legend()
-        plt.grid(True, alpha=0.3)
-        plt.tight_layout()
-        plt.show()
+def plot_test_predictions(test_preds, test_actuals, label, save_dir=None):
+    test_preds   = np.array(test_preds).flatten()
+    test_actuals = np.array(test_actuals).flatten()
+
+    plt.figure(figsize=(12, 6))
+    plt.plot(test_actuals, label='Actual',    linewidth=2)
+    plt.plot(test_preds,   label='Predicted', linewidth=2, alpha=0.7)
+    plt.xlabel('Time Step')
+    plt.ylabel('Value')
+    plt.title(f'{label}: Predictions vs Actual')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    if save_dir:
+        plt.savefig(f"{save_dir}/predictions.png", dpi=150)
+    plt.show()
 
 def explain_model(model, data_loader, args, num_samples=100):
     """

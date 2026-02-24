@@ -1,0 +1,9 @@
+{
+    "label": "Expenditures",
+    "start_date": "1992-01-01",
+    "test_loss": 53.49671173095703,
+    "per_label_mape": {
+        "loss_Expenditures": 53.49671173095703
+    },
+    "timestamp": "2026-02-24T20:11:35.134170"
+}

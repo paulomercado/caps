@@ -5,7 +5,7 @@ from ray import tune
 
 def ray_train(config):
     from train import (
-        load_dataset, crossval, set_seed, Arguments, MAPELoss, RMSELoss, DirectionalLoss
+        load_dataset, crossval, set_seed, Arguments, MAPELoss, RMSELoss,MADLoss,QuantileLoss
     )
     import torch.nn as nn
 
@@ -29,8 +29,9 @@ def ray_train(config):
         "huber":       nn.HuberLoss(),
         "mse":         nn.MSELoss(),
         "mae":         nn.L1Loss(),
-        "directional": DirectionalLoss(alpha=0.5),
-        "rmse":        RMSELoss(),
+        "quantile": QuantileLoss(),
+        "madl":         MADLoss(),
+        "rmse":        RMSELoss()
     }
     train_criterion = loss_dict[config.get('train_loss_name', 'mse')]
 
@@ -61,7 +62,7 @@ def ray_train(config):
         n_splits=config.get('n_splits', 5),
         # training
         seed=1,
-        epoch=100,
+        epoch=200,
         tuning_mode=True,
         cv_data=dataset['cv_data'],
         cv_labels=dataset['cv_labels'],
@@ -69,6 +70,7 @@ def ray_train(config):
         test_labels=dataset['test_labels'],
         input_size=dataset['input_size'],
         output_size=dataset['output_size'],
+        early_stopping_patience=config.get('early_stopping_patience', 20),
         device=torch.device("mps" if torch.backends.mps.is_available()
                             else "cuda" if torch.cuda.is_available()
                             else "cpu"),
@@ -86,5 +88,13 @@ def ray_train(config):
     all_label_keys  = fold_results[0]['per_label_mape'].keys()
     per_label_means = {k: float(np.mean([r['per_label_mape'][k] for r in fold_results]))
                        for k in all_label_keys}
+    mean_peak = float(np.mean([r['peak_mape'] for r in fold_results]))
+    mean_dir  = float(np.mean([r['dir_acc']   for r in fold_results]))
 
-    tune.report({"loss": mean_loss, "std": std_loss, **per_label_means})
+    tune.report({
+        "loss":      mean_loss,
+        "std":       std_loss,
+        "peak_loss": mean_peak,
+        "dir_acc":   mean_dir,
+        **per_label_means
+    })

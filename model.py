@@ -113,13 +113,6 @@ class GRUModel(nn.Module):
         
         # Layer normalization (Ba et al., 2016)
         self.layer_norm = nn.LayerNorm(hidden_size)
-
-        
-        # Squeeze-and-Excitation (Hu et al., 2018)
-        if self.use_se:
-            # Adaptive reduction based on hidden_size
-            reduction = max(4, hidden_size // 16)  # FIXED: min reduction of 4
-            self.se_block = SEBlock(hidden_size, reduction=reduction)
         
         self.relu = nn.ReLU()
         
@@ -171,16 +164,3 @@ class GRUModel(nn.Module):
 
         return gru_pred
 
-class SEBlock(nn.Module):
-    """Squeeze-and-Excitation (Hu et al., 2018)"""
-    def __init__(self, channels, reduction=16):
-        super().__init__()
-        reduced_channels = max(1, channels // reduction)  # FIXED: ensure at least 1
-        self.fc1 = nn.Linear(channels, reduced_channels)
-        self.fc2 = nn.Linear(reduced_channels, channels)
-    
-    def forward(self, x):
-        squeeze = x
-        excitation = torch.relu(self.fc1(squeeze))
-        excitation = torch.sigmoid(self.fc2(excitation))
-        return x * excitation
