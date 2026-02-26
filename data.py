@@ -43,10 +43,7 @@ def add_lag_features(df, target_cols, lags=[1, 3, 12]):
 def add_seasonal_features(df):
     """
     Add cyclical seasonal encoding.
-    
-    Based on:
-    - Hyndman & Athanasopoulos (2021): Seasonal decomposition
-    - Makridakis et al. (2020): M4 competition best practices
+
     """
     df = df.copy()
     
@@ -62,7 +59,7 @@ def add_seasonal_features(df):
     # Philippine tax calendar indicators
     # April 15 - individual tax deadline
     # April 30 - corporate tax deadline
-    df['is_tax_season'] = df.index.month.isin([3, 4, 5]).astype(int)
+    df['is_tax_season'] = df.index.month.isin([ 4]).astype(int)
     
     # December year-end collections
     df['is_year_end'] = (df.index.month == 12).astype(int)
@@ -82,7 +79,7 @@ def transform_data(data, save_path="Transforms/default/scaler.pkl"):
     if save_dir and not os.path.exists(save_dir):
         os.makedirs(save_dir, exist_ok=True)
     
-    scaler = RobustScaler()
+    scaler = MinMaxScaler()
     data_scaled = scaler.fit_transform(data)
 
     with open(save_path, "wb") as f:

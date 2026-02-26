@@ -2,106 +2,109 @@
     "1992-01-01": {
         "Tax Revenues": {
             "order": [
-                2,
+                4,
                 1,
                 1
             ],
-            "gru_mape": 40.19340896606445,
-            "gru_rmse": 125389.71875,
-            "hybrid_mape": 18.21282338540291,
-            "hybrid_rmse": 72715.35982995847
-        },
-        "Non-tax Revenues": {
-            "order": [
+            "seasonal_order": [
+                0,
                 1,
                 1,
-                0
+                6
             ],
-            "gru_mape": 49.87663269042969,
-            "gru_rmse": 26031.501953125,
-            "hybrid_mape": 47.01918567676348,
-            "hybrid_rmse": 22970.684502651267
+            "gru_mape": 31.699434280395508,
+            "gru_rmse": 104566.1640625,
+            "hybrid_mape": 18.06298675411381,
+            "hybrid_rmse": 51703.667465181235
         },
         "Expenditures": {
             "order": [
-                2,
                 1,
-                0
+                1,
+                3
             ],
-            "gru_mape": 57.73087692260742,
-            "gru_rmse": 264540.375,
-            "hybrid_mape": 28.735148177498477,
-            "hybrid_rmse": 161877.25753168893
+            "seasonal_order": [
+                1,
+                1,
+                0,
+                12
+            ],
+            "gru_mape": 35.2283821105957,
+            "gru_rmse": 180780.09375,
+            "hybrid_mape": 16.048514847694197,
+            "hybrid_rmse": 86661.87214504699
         }
     },
     "2000-01-01": {
         "Tax Revenues": {
             "order": [
-                3,
+                4,
                 1,
                 0
             ],
-            "gru_mape": 26.962051391601562,
-            "gru_rmse": 97731.3984375,
-            "hybrid_mape": 14.029322467551633,
-            "hybrid_rmse": 60522.691305338056
-        },
-        "Non-tax Revenues": {
-            "order": [
-                2,
+            "seasonal_order": [
                 1,
-                0
+                0,
+                1,
+                6
             ],
-            "gru_mape": 55.92728805541992,
-            "gru_rmse": 31224.44140625,
-            "hybrid_mape": 79.9572890472528,
-            "hybrid_rmse": 22017.42834574585
+            "gru_mape": 21.81548309326172,
+            "gru_rmse": 84963.359375,
+            "hybrid_mape": 10.097404156962968,
+            "hybrid_rmse": 36298.824753703826
         },
         "Expenditures": {
             "order": [
-                2,
+                4,
                 1,
-                0
+                3
             ],
-            "gru_mape": 46.8476448059082,
-            "gru_rmse": 231931.140625,
-            "hybrid_mape": 19.7475798061318,
-            "hybrid_rmse": 115773.70672059781
+            "seasonal_order": [
+                1,
+                1,
+                0,
+                12
+            ],
+            "gru_mape": 38.310218811035156,
+            "gru_rmse": 195768.734375,
+            "hybrid_mape": 19.06859690865244,
+            "hybrid_rmse": 108525.00970542438
         }
     },
     "2007-01-01": {
         "Tax Revenues": {
             "order": [
-                1,
-                1,
-                0
-            ],
-            "gru_mape": 21.5781192779541,
-            "gru_rmse": 93605.9375,
-            "hybrid_mape": 20.318299339707604,
-            "hybrid_rmse": 89609.22172583337
-        },
-        "Non-tax Revenues": {
-            "order": [
-                3,
+                6,
                 0,
-                3
+                4
             ],
-            "gru_mape": 40.79296112060547,
-            "gru_rmse": 25324.154296875,
-            "hybrid_mape": 41.92795489374404,
-            "hybrid_rmse": 24438.558402465398
+            "seasonal_order": [
+                0,
+                0,
+                1,
+                12
+            ],
+            "gru_mape": 16.73098373413086,
+            "gru_rmse": 77614.4375,
+            "hybrid_mape": 16.532127546344793,
+            "hybrid_rmse": 77923.85110791314
         },
         "Expenditures": {
             "order": [
                 3,
-                1,
-                0
+                0,
+                4
             ],
-            "gru_mape": 36.12540817260742,
-            "gru_rmse": 197623.46875,
-            "hybrid_mape": 16.548986238388864,
-            "hybrid_rmse": 98063.73699654214
+            "seasonal_order": [
+                1,
+                0,
+                1,
+                6
+            ],
+            "gru_mape": 27.918827056884766,
+            "gru_rmse": 160850.328125,
+            "hybrid_mape": 32.29616434341112,
+            "hybrid_rmse": 174636.71474789947
         }
     }
 }

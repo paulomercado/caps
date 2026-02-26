@@ -1,8 +1,8 @@
 {
     "label": "Tax Revenues",
     "start_date": "1992-01-01",
-    "best_loss": 20.641504859924318,
-    "best_std": 4.137974693228117,
-    "num_trials": 100,
-    "timestamp": "2026-02-24T22:43:12.359708"
+    "best_loss": 13.683102226257324,
+    "best_std": 2.6991700944486854,
+    "num_trials": 200,
+    "timestamp": "2026-02-26T09:40:15.698774"
 }

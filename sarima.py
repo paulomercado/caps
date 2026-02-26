@@ -17,50 +17,64 @@ def compute_metrics(actual, pred):
 
 
 # ── Grid Search ────────────────────────────────────────────
-def gridsearch(train, val, p_range, d_range, q_range, top_n=5):
-    from statsmodels.tsa.arima.model import ARIMA
+def gridsearch(train, val, p_range, d_range, q_range,
+               P_range=(0,), D_range=(0,), Q_range=(0,), s_range=(0,),
+               top_n=5, n_jobs=-1):
+    from statsmodels.tsa.statespace.sarimax import SARIMAX
+    from joblib import Parallel, delayed
 
     train = np.array(train)
-    val   = np.array(val)
+    val = np.array(val)
 
-    orders  = list(itertools.product(p_range, d_range, q_range))
-    results = []
-    print(f"  Fitting {len(orders)} models...")
+    orders = list(itertools.product(p_range, d_range, q_range))
+    seasonal_orders = list(itertools.product(P_range, D_range, Q_range, s_range))
+    combos = list(itertools.product(orders, seasonal_orders))
 
-    for i, order in enumerate(orders):
+    print(f"  Fitting {len(combos)} models (n_jobs={n_jobs})...")
+
+    def _fit_one(order, seasonal_order):
         try:
-            mod = ARIMA(train, order=order)
-            res = mod.fit()
+            mod = SARIMAX(train, order=order, seasonal_order=seasonal_order,
+                          enforce_stationarity=False, enforce_invertibility=False)
+            res = mod.fit(disp=False)
             val_reindexed = pd.Series(val, index=range(len(train), len(train) + len(val)))
-            res_extended  = res.append(val_reindexed, refit=False)
-            preds         = res_extended.predict(start=len(train), end=len(train) + len(val) - 1)
-
+            res_extended = res.append(val_reindexed, refit=False)
+            preds = res_extended.predict(start=len(train), end=len(train) + len(val) - 1)
             mse = np.mean((val - np.array(preds)) ** 2)
-            results.append({'order': order, 'MSE': mse})
+            return {'order': order, 'seasonal_order': seasonal_order, 'MSE': mse}
         except Exception:
-            continue
+            return None
 
+    results = Parallel(n_jobs=n_jobs)(
+        delayed(_fit_one)(order, seasonal_order)
+        for order, seasonal_order in combos
+    )
+
+    results = [r for r in results if r is not None]
     df = pd.DataFrame(results)
     if df.empty:
         raise ValueError("No models converged.")
     return df.sort_values('MSE').head(top_n)
 
+
 # ── Final Fit ──────────────────────────────────────────────
-def fit_sarima(train, test, order, walk_forward=False):
+def fit_sarima(train, test, order, seasonal_order=(0, 0, 0, 0), walk_forward=False):
+    from statsmodels.tsa.statespace.sarimax import SARIMAX
+
     train = np.array(train)
-    test  = np.array(test)
-    
+    test = np.array(test)
+
     if walk_forward:
-        # uses real residuals
-        res = ARIMA(train, order=tuple(order)).fit()
+        res = SARIMAX(train, order=tuple(order), seasonal_order=tuple(seasonal_order),
+                      enforce_stationarity=False, enforce_invertibility=False).fit(disp=False)
         history = pd.Series(test, index=range(len(train), len(train) + len(test)))
         res_extended = res.append(history, refit=False)
         preds = res_extended.predict(start=len(train), end=len(train) + len(test) - 1)
         preds = np.array(preds)
     else:
-        
-        res = ARIMA(train, order=tuple(order)).fit()
+        res = SARIMAX(train, order=tuple(order), seasonal_order=tuple(seasonal_order),
+                      enforce_stationarity=False, enforce_invertibility=False).fit(disp=False)
         preds = res.forecast(steps=len(test))
         preds = np.array(preds)
-    
+
     return preds, compute_metrics(test, preds)

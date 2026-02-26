@@ -1,8 +1,8 @@
 {
     "label": "Non-tax Revenues",
     "start_date": "1992-01-01",
-    "best_loss": 40.9190071105957,
-    "best_std": 22.280784467440945,
-    "num_trials": 100,
-    "timestamp": "2026-02-24T22:56:22.978224"
+    "best_loss": 48.056901168823245,
+    "best_std": 29.546094071038166,
+    "num_trials": 200,
+    "timestamp": "2026-02-25T09:00:05.591469"
 }
