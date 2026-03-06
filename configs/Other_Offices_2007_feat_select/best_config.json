@@ -1,0 +1,41 @@
+{
+    "hidden_size": 64,
+    "num_layers": 1,
+    "dropout": 0.11747511455877761,
+    "use_attention": false,
+    "use_branches": false,
+    "lr": 0.0014800174008789565,
+    "wd": 7.809081330948093e-06,
+    "batch_size": 16,
+    "seq_len": 24,
+    "l1_lambda": 2.7569590643247785e-05,
+    "train_loss_name": "mse",
+    "early_stopping_patience": 75,
+    "n_splits": 5,
+    "log_transform": true,
+    "skip_log_cols": [
+        "Inflation",
+        "USDPHP"
+    ],
+    "forecast_horizon": 1,
+    "tag": "feat_select",
+    "features": [
+        "Other Offices",
+        "USDPHP",
+        "Inflation"
+    ],
+    "dummy_vars": [
+        "TRAIN",
+        "CREATE"
+    ],
+    "use_seasonal": true,
+    "lag_periods": [
+        12
+    ],
+    "use_lags": true,
+    "labels": [
+        "Other Offices"
+    ],
+    "experiment_name": "Other_Offices_2007_feat_select",
+    "start_date": "2007-01-01"
+}

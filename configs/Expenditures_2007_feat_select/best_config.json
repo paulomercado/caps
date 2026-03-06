@@ -1,0 +1,43 @@
+{
+    "hidden_size": 96,
+    "num_layers": 2,
+    "dropout": 0.15207419353702262,
+    "use_attention": false,
+    "use_branches": false,
+    "lr": 0.0017104030252470814,
+    "wd": 2.130809391275727e-05,
+    "batch_size": 32,
+    "seq_len": 24,
+    "l1_lambda": 2.8774328453480887e-05,
+    "train_loss_name": "quantile",
+    "early_stopping_patience": 75,
+    "n_splits": 5,
+    "log_transform": true,
+    "skip_log_cols": [
+        "Inflation",
+        "USDPHP"
+    ],
+    "forecast_horizon": 1,
+    "tag": "feat_select",
+    "features": [
+        "Expenditures",
+        "Non-tax Revenues",
+        "USDPHP",
+        "Inflation"
+    ],
+    "dummy_vars": [
+        "TRAIN",
+        "CREATE",
+        "COVID-19"
+    ],
+    "use_seasonal": true,
+    "lag_periods": [
+        12
+    ],
+    "use_lags": true,
+    "labels": [
+        "Expenditures"
+    ],
+    "experiment_name": "Expenditures_2007_feat_select",
+    "start_date": "2007-01-01"
+}

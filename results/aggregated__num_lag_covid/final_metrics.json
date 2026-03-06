@@ -1,9 +1,0 @@
-{
-    "test_loss": 25.5684757232666,
-    "per_label_mape": {
-        "loss_Tax Revenues": 16.584548950195312,
-        "loss_Non-tax Revenues": 44.793067932128906,
-        "loss_Expenditures": 15.32780933380127
-    },
-    "timestamp": "2026-02-20T15:58:17.146855"
-}

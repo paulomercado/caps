@@ -1,0 +1,43 @@
+{
+    "hidden_size": 96,
+    "num_layers": 2,
+    "dropout": 0.11088007933598694,
+    "use_attention": false,
+    "use_branches": false,
+    "lr": 0.0016158500709629955,
+    "wd": 4.35304987618678e-05,
+    "batch_size": 32,
+    "seq_len": 6,
+    "l1_lambda": 1.2519358517163287e-05,
+    "train_loss_name": "mse",
+    "early_stopping_patience": 75,
+    "n_splits": 5,
+    "log_transform": true,
+    "skip_log_cols": [
+        "Inflation",
+        "USDPHP"
+    ],
+    "forecast_horizon": 1,
+    "tag": "feat_select",
+    "features": [
+        "Expenditures",
+        "Non-tax Revenues",
+        "USDPHP",
+        "Inflation"
+    ],
+    "dummy_vars": [
+        "TRAIN",
+        "CREATE",
+        "COVID-19"
+    ],
+    "use_seasonal": true,
+    "lag_periods": [
+        12
+    ],
+    "use_lags": true,
+    "labels": [
+        "Expenditures"
+    ],
+    "experiment_name": "Expenditures_2000_feat_select",
+    "start_date": "2000-01-01"
+}

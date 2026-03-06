@@ -40,17 +40,15 @@ def ray_train(config):
         hidden_size=config['hidden_size'],
         num_layers=config['num_layers'],
         dropout=config['dropout'],
-        use_attention=config['use_attention'],
-        use_branches=config['use_branches'],
-        use_se=config.get('use_se', False),
+        use_attention=config.get('use_attention', False),
+        use_branches=config.get('use_branches', False),
         lr=config['lr'],
         wd=config['wd'],
-        factor=config['factor'],
-        patience=config['patience'],
         batch_size=config['batch_size'],
         seq_len=config['seq_len'],
         l1_lambda=config['l1_lambda'],
         train_loss_name=config.get('train_loss_name', 'mse'),
+        forecast_horizon=config.get('forecast_horizon', 1),
         # data
         features=config.get('features'),
         labels=config.get('labels'),
@@ -70,14 +68,13 @@ def ray_train(config):
         test_labels=dataset['test_labels'],
         input_size=dataset['input_size'],
         output_size=dataset['output_size'],
-        early_stopping_patience=config.get('early_stopping_patience', 20),
+        early_stopping_patience=config.get('early_stopping_patience', 75),
         device=torch.device("mps" if torch.backends.mps.is_available()
                             else "cuda" if torch.cuda.is_available()
                             else "cpu"),
         train_criterion=train_criterion,
         test_criterion=MAPELoss(),
     )
-
     set_seed(args.seed)
 
     fold_results = crossval(data=args.cv_data, labels=args.cv_labels, args=args)
@@ -90,11 +87,12 @@ def ray_train(config):
                        for k in all_label_keys}
     mean_peak = float(np.mean([r['peak_mape'] for r in fold_results]))
     mean_dir  = float(np.mean([r['dir_acc']   for r in fold_results]))
-
+    mean_combined = float(np.mean([r['combined'] for r in fold_results]))
     tune.report({
         "loss":      mean_loss,
         "std":       std_loss,
         "peak_loss": mean_peak,
         "dir_acc":   mean_dir,
+        "combined": mean_combined,
         **per_label_means
     })

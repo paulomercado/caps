@@ -1,0 +1,41 @@
+{
+    "hidden_size": 96,
+    "num_layers": 2,
+    "dropout": 0.28134186937262395,
+    "use_attention": false,
+    "use_branches": false,
+    "lr": 0.0010539699261190726,
+    "wd": 4.210600720017647e-05,
+    "batch_size": 16,
+    "seq_len": 6,
+    "l1_lambda": 2.6621492606665353e-05,
+    "train_loss_name": "huber",
+    "early_stopping_patience": 75,
+    "n_splits": 5,
+    "log_transform": true,
+    "skip_log_cols": [
+        "Inflation",
+        "USDPHP"
+    ],
+    "forecast_horizon": 1,
+    "tag": "feat_select",
+    "features": [
+        "BIR",
+        "Non-tax Revenues",
+        "USDPHP",
+        "Inflation"
+    ],
+    "dummy_vars": [
+        "TRAIN",
+        "CREATE",
+        "COVID-19"
+    ],
+    "use_seasonal": true,
+    "lag_periods": [],
+    "use_lags": false,
+    "labels": [
+        "Tax Revenues"
+    ],
+    "experiment_name": "Tax_Revenues_1992_feat_select",
+    "start_date": "1992-01-01"
+}

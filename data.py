@@ -5,21 +5,28 @@ import torch
 from torch.utils.data import Dataset
 
 from sklearn.preprocessing import MinMaxScaler, RobustScaler
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 
 import pickle
 import os
 
 class TimeSeriesDataset(Dataset):
-    def __init__(self, X, y, seq_len):
+    def __init__(self, X, y, seq_len, forecast_horizon=1):
         self.X = torch.tensor(X).float()
         self.y = torch.tensor(y).float()
         self.seq_len = seq_len
-    
+        self.forecast_horizon = forecast_horizon
+
     def __len__(self):
-        return len(self.X) - self.seq_len 
-        
+        return len(self.X) - self.seq_len - self.forecast_horizon + 1
+
     def __getitem__(self, idx):
-        return (self.X[idx:idx+self.seq_len], self.y[idx+self.seq_len])
+        x = self.X[idx:idx + self.seq_len]
+        if self.forecast_horizon == 1:
+            y = self.y[idx + self.seq_len]
+        else:
+            y = self.y[idx + self.seq_len:idx + self.seq_len + self.forecast_horizon]
+        return x, y
 
 def add_lag_features(df, target_cols, lags=[1, 3, 12]):
     """    
@@ -109,3 +116,42 @@ def split_data(X, use_val=True):
         test = X[train_size + val_size:]
 
         return train, val, test
+
+
+
+def pairwise_corr(df, feature_cols, target_series, threshold=0.85):
+    corr_matrix = df[feature_cols].corr().abs()
+    target_corr = df[feature_cols].corrwith(target_series).abs().to_dict()
+    
+    to_drop = set()
+    for i in range(len(feature_cols)):
+        for j in range(i + 1, len(feature_cols)):
+            if corr_matrix.iloc[i, j] > threshold:
+                fi, fj = feature_cols[i], feature_cols[j]
+                if fi in to_drop or fj in to_drop:
+                    continue
+                ci = target_corr.get(fi, 0) if not np.isnan(target_corr.get(fi, 0)) else 0
+                cj = target_corr.get(fj, 0) if not np.isnan(target_corr.get(fj, 0)) else 0
+                if ci < cj:
+                    to_drop.add(fi)
+                    print(f"    Dropping {fi:30s} (r={corr_matrix.iloc[i,j]:.2f} with {fj}, target_r={ci:.3f})")
+                else:
+                    to_drop.add(fj)
+                    print(f"    Dropping {fj:30s} (r={corr_matrix.iloc[i,j]:.2f} with {fi}, target_r={cj:.3f})")
+    
+    kept = [f for f in feature_cols if f not in to_drop]
+    print(f"    Kept {len(kept)}/{len(feature_cols)} features")
+    return kept
+
+def target_corr(df, feature_cols, target_series, min_corr=0.3):
+    corr = df[feature_cols].corrwith(target_series).abs().sort_values(ascending=False)
+    
+    selected = []
+    for feat, c in corr.items():
+        if np.isnan(c):
+            continue
+        marker = "✓" if c >= min_corr else "✗"
+        print(f"    {marker} {feat:30s} r={c:.3f}")
+        if c >= min_corr:
+            selected.append(feat)
+    return selected

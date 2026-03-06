@@ -1,0 +1,42 @@
+{
+    "hidden_size": 64,
+    "num_layers": 1,
+    "dropout": 0.20765145219181744,
+    "use_attention": false,
+    "use_branches": false,
+    "lr": 0.0018690614428747143,
+    "wd": 5.168608885501846e-06,
+    "batch_size": 16,
+    "seq_len": 18,
+    "l1_lambda": 1.645285707542503e-06,
+    "train_loss_name": "mse",
+    "early_stopping_patience": 75,
+    "n_splits": 5,
+    "log_transform": true,
+    "skip_log_cols": [
+        "Inflation",
+        "USDPHP"
+    ],
+    "forecast_horizon": 1,
+    "tag": "feat_select",
+    "features": [
+        "BIR",
+        "USDPHP",
+        "Inflation"
+    ],
+    "dummy_vars": [
+        "TRAIN",
+        "CREATE",
+        "COVID-19"
+    ],
+    "use_seasonal": true,
+    "lag_periods": [
+        12
+    ],
+    "use_lags": true,
+    "labels": [
+        "BIR"
+    ],
+    "experiment_name": "BIR_1992_feat_select",
+    "start_date": "1992-01-01"
+}

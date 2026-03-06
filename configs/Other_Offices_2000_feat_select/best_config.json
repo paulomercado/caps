@@ -1,0 +1,41 @@
+{
+    "hidden_size": 96,
+    "num_layers": 2,
+    "dropout": 0.21987867418012377,
+    "use_attention": false,
+    "use_branches": false,
+    "lr": 0.001215558597979732,
+    "wd": 1.2704952111815533e-05,
+    "batch_size": 16,
+    "seq_len": 6,
+    "l1_lambda": 3.3052368457504054e-06,
+    "train_loss_name": "huber",
+    "early_stopping_patience": 75,
+    "n_splits": 5,
+    "log_transform": true,
+    "skip_log_cols": [
+        "Inflation",
+        "USDPHP"
+    ],
+    "forecast_horizon": 1,
+    "tag": "feat_select",
+    "features": [
+        "Other Offices",
+        "USDPHP",
+        "Inflation"
+    ],
+    "dummy_vars": [
+        "TRAIN",
+        "CREATE"
+    ],
+    "use_seasonal": true,
+    "lag_periods": [
+        12
+    ],
+    "use_lags": true,
+    "labels": [
+        "Other Offices"
+    ],
+    "experiment_name": "Other_Offices_2000_feat_select",
+    "start_date": "2000-01-01"
+}

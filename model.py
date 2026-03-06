@@ -66,64 +66,38 @@ class SimpleGRUModel(nn.Module):
         
     
 class GRUModel(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size, num_layers=3, dropout=0.3,  
-                 num_attention_heads=2, args = None):
-        """
-        GRU model with multiple literature-backed improvements:
-        - Residual connections (He et al., 2016)
-        - Multi-head attention (Vaswani et al., 2017)
-        - Layer normalization (Ba et al., 2016)
-        - Squeeze-and-Excitation (Hu et al., 2018)
-        
-        Args:
-            input_size: Number of input features
-            hidden_size: GRU hidden dimension
-            output_size: Number of forecast targets
-            num_layers: Number of GRU layers
-            dropout: Dropout rate
-            use_branches: Use separate branches for each output
-            use_attention: Use multi-head attention
-            use_residual: Use residual connections
-            num_attention_heads: Number of attention heads
-            use_se: Use Squeeze-and-Excitation blocks
-        """
+    def __init__(self, input_size, hidden_size, output_size, num_layers=3, dropout=0.3,
+                 num_attention_heads=2, args=None):
         super().__init__()
 
         self.hidden_size = hidden_size
-        self.output_size = output_size  
-        self.num_layers = num_layers    
+        self.output_size = output_size
+        self.num_layers = num_layers
+        self.forecast_horizon = getattr(args, 'forecast_horizon', 1)  
 
-        self.use_attention = args.use_attention if hasattr(args, 'use_attention') else False
-        self.use_branches = args.use_branches if hasattr(args, 'use_branches') else True
-        self.use_se = args.use_se if hasattr(args, 'use_se') else False
-        
-        # GRU backbone
-        self.gru = nn.GRU(input_size, hidden_size, num_layers, 
+        self.use_attention = getattr(args, 'use_attention', False)
+        self.use_branches = getattr(args, 'use_branches', False)
+
+
+        self.gru = nn.GRU(input_size, hidden_size, num_layers,
                          batch_first=True, dropout=dropout if num_layers > 1 else 0)
-        self.use_linear_residual = args.use_linear_residual if hasattr(args, 'use_linear_residual') else False
 
-        if self.use_linear_residual:
-            self.linear_residual = nn.Linear(input_size, output_size)
-        # Multi-head attention (Vaswani et al., 2017)
         if self.use_attention:
             self.multihead_attention = nn.MultiheadAttention(
-                hidden_size, num_attention_heads, dropout=dropout*0.5, batch_first=True
+                hidden_size, num_attention_heads, dropout=dropout * 0.5, batch_first=True
             )
             self.attn_norm = nn.LayerNorm(hidden_size)
-        
-        # Layer normalization (Ba et al., 2016)
+
         self.layer_norm = nn.LayerNorm(hidden_size)
-        
-        self.relu = nn.ReLU()
-        
-        # Output branches
+
+        # Output: predict all horizons at once
         if self.use_branches:
             self.branches = nn.ModuleList([
                 nn.Sequential(
-                    nn.Linear(hidden_size, hidden_size // 2),  # Shared bottleneck
+                    nn.Linear(hidden_size, hidden_size // 2),
                     nn.ReLU(),
                     nn.Dropout(dropout * 0.3),
-                    nn.Linear(hidden_size // 2, 1)  # Final output: 1 value
+                    nn.Linear(hidden_size // 2, self.forecast_horizon)  # h outputs per branch
                 ) for _ in range(output_size)
             ])
         else:
@@ -131,36 +105,29 @@ class GRUModel(nn.Module):
                 nn.Linear(hidden_size, hidden_size // 2),
                 nn.ReLU(),
                 nn.Dropout(dropout),
-                nn.Linear(hidden_size // 2, output_size) 
+                nn.Linear(hidden_size // 2, output_size * self.forecast_horizon)
             )
-    
+
     def forward(self, x):
-        # GRU encoding
         gru_out, _ = self.gru(x)
 
-        # Multi-head attention
         if self.use_attention:
             attn_out, _ = self.multihead_attention(gru_out, gru_out, gru_out)
-            attn_out = self.attn_norm(attn_out + gru_out)  # Residual
+            attn_out = self.attn_norm(attn_out + gru_out)
             context = attn_out[:, -1, :]
         else:
             context = gru_out[:, -1, :]
-        
-        # Layer norm
+
         out = self.layer_norm(context)
-        
-        # Squeeze-and-Excitation
-        if self.use_se:
-            out = self.se_block(out)
-        
-        # Output
+
         if self.use_branches:
             gru_pred = torch.cat([branch(out) for branch in self.branches], dim=1)
         else:
             gru_pred = self.fc_out(out)
 
-        if self.use_linear_residual:
-            gru_pred = gru_pred + self.linear_residual(x[:, -1, :])
+        # Reshape only for multi-output + multi-horizon
+        if self.forecast_horizon > 1 and self.output_size > 1:
+            gru_pred = gru_pred.view(-1, self.output_size, self.forecast_horizon)
 
         return gru_pred
 

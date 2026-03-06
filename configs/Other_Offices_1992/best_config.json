@@ -1,22 +1,26 @@
 {
-    "hidden_size": 128,
+    "hidden_size": 96,
     "num_layers": 1,
-    "dropout": 0.11999602686454607,
+    "dropout": 0.28157253510253644,
     "use_attention": false,
     "use_branches": false,
-    "linear_residual": false,
-    "lr": 0.0039047285655672624,
-    "wd": 7.418712652554285e-05,
+    "lr": 0.0019153247215057546,
+    "wd": 4.6143107424100596e-05,
     "batch_size": 16,
     "seq_len": 12,
-    "l1_lambda": 8.019527404869395e-06,
-    "train_loss_name": "mse",
-    "factor": 0.5,
-    "patience": 5,
+    "l1_lambda": 3.1512699504842283e-06,
+    "train_loss_name": "huber",
     "early_stopping_patience": 75,
-    "n_splits": 3,
+    "n_splits": 5,
+    "log_transform": true,
+    "skip_log_cols": [
+        "Inflation",
+        "USDPHP"
+    ],
+    "forecast_horizon": 1,
     "features": [
         "Other Offices",
+        "Inflation",
         "NominalGDP_disagg",
         "Pop_disagg",
         "USDPHP"
@@ -28,7 +32,7 @@
         "FIST",
         "BIR_COMM"
     ],
-    "use_seasonal": false,
+    "use_seasonal": true,
     "lag_periods": [
         1,
         3,

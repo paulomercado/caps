@@ -1,0 +1,42 @@
+{
+    "hidden_size": 64,
+    "num_layers": 2,
+    "dropout": 0.17398936418527966,
+    "use_attention": false,
+    "use_branches": false,
+    "lr": 0.0016691085559119706,
+    "wd": 1.1152210404133036e-05,
+    "batch_size": 16,
+    "seq_len": 6,
+    "l1_lambda": 3.2951036130890125e-06,
+    "train_loss_name": "madl",
+    "early_stopping_patience": 75,
+    "n_splits": 5,
+    "log_transform": true,
+    "skip_log_cols": [
+        "Inflation",
+        "USDPHP"
+    ],
+    "forecast_horizon": 1,
+    "tag": "feat_select",
+    "features": [
+        "BIR",
+        "USDPHP",
+        "Inflation"
+    ],
+    "dummy_vars": [
+        "TRAIN",
+        "CREATE",
+        "COVID-19"
+    ],
+    "use_seasonal": true,
+    "lag_periods": [
+        12
+    ],
+    "use_lags": true,
+    "labels": [
+        "BIR"
+    ],
+    "experiment_name": "BIR_2007_feat_select",
+    "start_date": "2007-01-01"
+}

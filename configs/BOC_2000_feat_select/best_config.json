@@ -1,0 +1,42 @@
+{
+    "hidden_size": 96,
+    "num_layers": 1,
+    "dropout": 0.26503398847272364,
+    "use_attention": false,
+    "use_branches": false,
+    "lr": 0.001914623675543923,
+    "wd": 4.837973328653697e-05,
+    "batch_size": 32,
+    "seq_len": 6,
+    "l1_lambda": 7.696853447481517e-05,
+    "train_loss_name": "quantile",
+    "early_stopping_patience": 75,
+    "n_splits": 5,
+    "log_transform": true,
+    "skip_log_cols": [
+        "Inflation",
+        "USDPHP"
+    ],
+    "forecast_horizon": 1,
+    "tag": "feat_select",
+    "features": [
+        "BOC",
+        "USDPHP",
+        "Inflation"
+    ],
+    "dummy_vars": [
+        "TRAIN",
+        "CREATE",
+        "COVID-19"
+    ],
+    "use_seasonal": true,
+    "lag_periods": [
+        1
+    ],
+    "use_lags": true,
+    "labels": [
+        "BOC"
+    ],
+    "experiment_name": "BOC_2000_feat_select",
+    "start_date": "2000-01-01"
+}

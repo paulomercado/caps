@@ -229,7 +229,10 @@ def load_dataset(args):
     
     cv_data = np.concatenate([train_data, val_data], axis=0)
     cv_labels = np.concatenate([train_labels, val_labels], axis=0)
-
+    if getattr(args, 'return_df', False):
+        features_df = pd.concat(feature_dfs, axis=1)
+        labels_df = df[label_cols]
+        return {'df': features_df, 'labels_df': labels_df}
     return {
         'cv_data': cv_data,
         'cv_labels': cv_labels,
@@ -377,11 +380,7 @@ def run(model, train_loader, val_loader, test_loader, args, fold=None, label_sca
 
     return test_loss, inversed_test_preds, inversed_actual, train_losses, val_losses, per_label_mape_dict
 
-def crossval(data, labels, args):  # REMOVED: test_data, test_labels
-    """
-    Cross-validation for hyperparameter tuning.
-    Evaluates on validation folds within the data.
-    """
+def crossval(data, labels, args):  
     n_splits = getattr(args, 'n_splits', 5)
     tscv = TimeSeriesSplit(n_splits=n_splits)
     fold_results = []
@@ -395,13 +394,11 @@ def crossval(data, labels, args):  # REMOVED: test_data, test_labels
             print(f"Fold {fold + 1}/{n_splits}")
             print(f"{'='*50}")
         
-        # Split data for this fold
         train_data_fold = data[train_idx]
         train_labels_fold = labels[train_idx]
         val_data_fold = data[val_idx]
         val_labels_fold = labels[val_idx]
         
-        # Scale data
         set_seed(1)
         train_data_scaled, data_scaler   = dt.transform_data(train_data_fold)
         train_labels_scaled, label_scaler = dt.transform_data(train_labels_fold)
@@ -410,16 +407,13 @@ def crossval(data, labels, args):  # REMOVED: test_data, test_labels
         
         input_size = train_data_scaled.shape[1]
         output_size = train_labels_scaled.shape[1]
+        fh = getattr(args, 'forecast_horizon', 1)
+        train_dataset = dt.TimeSeriesDataset(train_data_scaled, train_labels_scaled, seq_len=args.seq_len, forecast_horizon=fh)
+        val_dataset = dt.TimeSeriesDataset(val_data_scaled, val_labels_scaled, seq_len=args.seq_len, forecast_horizon=fh)
         
-        # Create datasets
-        train_dataset = dt.TimeSeriesDataset(train_data_scaled, train_labels_scaled, seq_len=args.seq_len)
-        val_dataset = dt.TimeSeriesDataset(val_data_scaled, val_labels_scaled, seq_len=args.seq_len)
-        
-        # Create loaders
-        train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=False)
+        train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
         val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
         
-        # Create fresh model for this fold
         set_seed(1)
         model = mod.GRUModel(
             input_size=input_size,
@@ -431,33 +425,24 @@ def crossval(data, labels, args):  # REMOVED: test_data, test_labels
             args=args
         ).to(args.device)
         
-        # Train and evaluate on validation fold
         test_loss, test_preds, inversed_actual, train_losses, val_losses, per_label_mape_dict = run(
-            model, 
-            train_loader, 
-            val_loader, 
-            val_loader,  # Use val_loader for evaluation
-            args,
-            fold=fold,
-            label_scaler=label_scaler
+            model, train_loader, val_loader, val_loader, args,
+            fold=fold, label_scaler=label_scaler
         )
         
         preds_np   = test_preds.cpu().numpy()   if torch.is_tensor(test_preds)   else np.array(test_preds)
         actuals_np = inversed_actual.cpu().numpy() if torch.is_tensor(inversed_actual) else np.array(inversed_actual)
         
-        # Flatten if needed
         preds_flat   = preds_np.flatten()
         actuals_flat = actuals_np.flatten()
 
         pred_std   = np.std(preds_flat)
         actual_std = np.std(actuals_flat)
         
-        # Directional accuracy
         pred_diff   = np.diff(preds_flat)
         actual_diff = np.diff(actuals_flat)
         dir_acc     = float(np.mean((pred_diff * actual_diff) > 0))
         
-        # how well it predicts the top x% of values
         def mape_on_top_quantile(preds, actuals, q=0.90):
             threshold = np.quantile(actuals, q)
             mask = actuals >= threshold
@@ -466,12 +451,15 @@ def crossval(data, labels, args):  # REMOVED: test_data, test_labels
             return float(np.mean(np.abs((actuals[mask] - preds[mask]) / (actuals[mask] + 1e-8))) * 100)
         
         peak_mape = mape_on_top_quantile(preds_flat, actuals_flat, q=0.90)
+        
         if pred_std < 0.05 * actual_std:
             peak_mape = 999.0
             dir_acc   = 0.0
             test_loss = torch.tensor(999.0)
         
-        # Store results
+        # Combined metric: peak accuracy + directional accuracy
+        combined = 0.9 * peak_mape + 0.1 * (1 - dir_acc) * 100
+        
         fold_results.append({
             'fold': fold + 1,
             'test_loss': test_loss.item() if torch.is_tensor(test_loss) else test_loss,
@@ -482,7 +470,8 @@ def crossval(data, labels, args):  # REMOVED: test_data, test_labels
             'train_size': len(train_idx),
             'val_size': len(val_idx),
             'dir_acc':    dir_acc,       
-            'peak_mape':  peak_mape,     
+            'peak_mape':  peak_mape,
+            'combined':   combined,
         })
         
         if not is_tuning:
@@ -494,7 +483,6 @@ def crossval(data, labels, args):  # REMOVED: test_data, test_labels
         print(f"\n{'='*50}\nCross-Validation Results:\n{'='*50}")
         print(f"Mean MAPE: {np.mean(test_losses):.4f} (+/- {np.std(test_losses):.4f})")
 
-        # Per-label summary across folds
         all_label_keys = fold_results[0]['per_label_mape'].keys()
         for k in all_label_keys:
             vals = [r['per_label_mape'][k] for r in fold_results]

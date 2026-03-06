@@ -1,9 +1,0 @@
-{
-    "label": "Non-tax Revenues",
-    "start_date": "1992-01-01",
-    "test_loss": 50.373374938964844,
-    "per_label_mape": {
-        "loss_Non-tax Revenues": 50.373374938964844
-    },
-    "timestamp": "2026-02-24T20:11:25.756952"
-}
