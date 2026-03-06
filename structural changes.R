@@ -3,7 +3,7 @@ library(zoo)
 library(dplyr)
 
 # ── Load & Prep ──────────────────────────────────────────
-df <- read.csv("D:/School/ADMU/M AMF/caps_git/Data/cordata.csv", stringsAsFactors = FALSE)
+df <- read.csv('/Users/pjam/Desktop/School/M AMF/caps/Data/cordata.csv', stringsAsFactors = FALSE)
 df$Date <- as.Date(df$Date, format = "%m/%d/%Y")
 df$date <- NULL
 
@@ -52,7 +52,7 @@ level_info <- list(
 )
 
 # ══════════════════════════════════════════════════════════
-# PART 1: GROWTH RATE BREAKS
+# YoY GROWTH RATE BREAKS
 # ══════════════════════════════════════════════════════════
 par(mfrow = c(2, 2), mar = c(4, 4, 3, 1) + 0.1, oma = c(0, 0, 2, 0))
 for (info in growth_info) {
@@ -97,7 +97,7 @@ for (info in growth_info) {
 }
 
 # ══════════════════════════════════════════════════════════
-# PART 2: VARIANCE BREAKS ON GROWTH RATES
+# VARIANCE BREAKS ON GROWTH RATES
 # ══════════════════════════════════════════════════════════
 cat("\n\n", paste(rep("=", 60), collapse = ""), "\n")
 cat("  VARIANCE BREAKS (GROWTH RATES)\n")
@@ -125,7 +125,7 @@ for (info in growth_info) {
 }
 
 # ══════════════════════════════════════════════════════════
-# PART 3: STRUCTURAL BREAKS IN LEVELS (WITH TREND)
+# STRUCTURAL BREAKS IN LEVELS (WITH TREND)
 # ══════════════════════════════════════════════════════════
 cat("\n\n", paste(rep("=", 60), collapse = ""), "\n")
 cat("  STRUCTURAL BREAKS (PRICE LEVELS WITH TREND)\n")
@@ -149,3 +149,197 @@ for (info in level_info) {
     cat("No breaks detected.\n")
   }
 }
+
+
+### testing
+# ── Define segments ────────────────────────────────────────
+bir_s0 <- window(bir_lev, end   = as.Date("2011-01-01"))
+bir_s1 <- window(bir_lev, start = as.Date("2011-02-01"), end = as.Date("2019-12-01"))
+bir_s2 <- window(bir_lev, start = as.Date("2020-01-01"))
+
+# ── Fit trends ────────────────────────────────────────────
+fit0 <- lm(coredata(bir_s0) ~ seq_along(bir_s0))
+fit1 <- lm(coredata(bir_s1) ~ seq_along(bir_s1))
+fit2 <- lm(coredata(bir_s2) ~ seq_along(bir_s2))
+
+# ── Plot ──────────────────────────────────────────────────
+plot(bir_lev, col = "darkgray", lwd = 1,
+     main = "BIR Collections — Segment Trends",
+     ylab = "BIR Collections", xlab = "Date")
+
+lines(zoo(fitted(fit0), order.by = index(bir_s0)), col = "blue",      lwd = 2)
+lines(zoo(fitted(fit1), order.by = index(bir_s1)), col = "darkorange", lwd = 2)
+lines(zoo(fitted(fit2), order.by = index(bir_s2)), col = "green4",    lwd = 2)
+
+abline(v = as.Date("2011-02-01"), col = "darkorange", lty = 2, lwd = 1.5)
+abline(v = as.Date("2020-01-01"), col = "green4",     lty = 2, lwd = 1.5)
+
+legend("topleft",
+       legend = c("Observed",
+                  "pre-2011 trend", "2011–2020 trend", "2020– trend",
+                  "2011 break", "2020 break"),
+       col    = c("darkgray", "blue", "darkorange", "green4",
+                  "darkorange", "green4"),
+       lty    = c(1, 1, 1, 1, 2, 2),
+       lwd    = c(1, 2, 2, 2, 1.5, 1.5),
+       bty    = "n", cex = 0.8)
+
+# ── Define growth-rate segments ────────────────────────────
+bir_g0 <- window(bir_ts, end   = as.Date("1997-12-01"))
+bir_g1 <- window(bir_ts, start = as.Date("1998-01-01"), end = as.Date("2019-12-01"))
+bir_g2 <- window(bir_ts, start = as.Date("2020-01-01"), end = as.Date("2021-12-01"))
+bir_g3 <- window(bir_ts, start = as.Date("2022-01-01"))
+# ── Segment means ─────────────────────────────────────────
+m0 <- mean(coredata(bir_g0))
+m1 <- mean(coredata(bir_g1))
+m2 <- mean(coredata(bir_g2))
+m3 <- mean(coredata(bir_g3))
+
+# ── Plot ──────────────────────────────────────────────────
+plot(bir_ts,
+     col = "darkgray", lwd = 1, type = "l",
+     main = "BIR YoY Growth — Segment Means",
+     ylab = "YoY Growth (%)", xlab = "Date")
+
+lines(zoo(rep(m0, length(bir_g0)), order.by = index(bir_g0)), col = "purple", lwd = 2)
+lines(zoo(rep(m1, length(bir_g1)), order.by = index(bir_g1)), col = "blue",   lwd = 2)
+lines(zoo(rep(m2, length(bir_g2)), order.by = index(bir_g2)), col = "red",    lwd = 2)
+lines(zoo(rep(m3, length(bir_g3)), order.by = index(bir_g3)), col = "green4", lwd = 2)
+
+abline(v = as.Date("1998-01-01"), col = "purple", lty = 2, lwd = 1.5)
+abline(v = as.Date("2020-01-01"), col = "red",    lty = 2, lwd = 1.5)
+abline(v = as.Date("2022-01-01"), col = "green4", lty = 2, lwd = 1.5)
+abline(h = 0, col = "black", lty = 3, lwd = 1)
+
+legend("bottomleft",
+       legend = c("YoY Growth",
+                  paste0("pre-1998 mean: ",  round(m0, 1), "%"),
+                  paste0("1998–2020 mean: ", round(m1, 1), "%"),
+                  paste0("2020–2022 mean: ", round(m2, 1), "%"),
+                  paste0("2022– mean: ",     round(m3, 1), "%"),
+                  "1998 break", "2020 break", "2022 break"),
+       col    = c("darkgray", "purple", "blue", "red", "green4",
+                  "purple", "red", "green4"),
+       lty    = c(1, 1, 1, 1, 1, 2, 2, 2),
+       lwd    = c(1, 2, 2, 2, 2, 1.5, 1.5, 1.5),
+       bty    = "n", cex = 0.8)
+
+
+###
+
+# ── Define segments (BOC level trend breaks) ──────────────
+boc_s0 <- window(boc_lev, end   = as.Date("2004-04-01"))
+boc_s1 <- window(boc_lev, start = as.Date("2004-05-01"), end = as.Date("2008-10-01"))
+boc_s2 <- window(boc_lev, start = as.Date("2008-11-01"), end = as.Date("2017-07-01"))
+boc_s3 <- window(boc_lev, start = as.Date("2017-08-01"), end = as.Date("2019-12-01"))
+boc_s4 <- window(boc_lev, start = as.Date("2020-01-01"), end = as.Date("2022-04-01"))
+boc_s5 <- window(boc_lev, start = as.Date("2022-05-01"))
+
+# ── Fit trends ────────────────────────────────────────────
+fit0 <- lm(coredata(boc_s0) ~ seq_along(boc_s0))
+fit1 <- lm(coredata(boc_s1) ~ seq_along(boc_s1))
+fit2 <- lm(coredata(boc_s2) ~ seq_along(boc_s2))
+fit3 <- lm(coredata(boc_s3) ~ seq_along(boc_s3))
+fit4 <- lm(coredata(boc_s4) ~ seq_along(boc_s4))
+fit5 <- lm(coredata(boc_s5) ~ seq_along(boc_s5))
+
+# ── Plot ──────────────────────────────────────────────────
+plot(boc_lev, col = "darkgray", lwd = 1,
+     main = "BOC Collections — Segment Trends",
+     ylab = "BOC Collections", xlab = "Date")
+
+lines(zoo(fitted(fit0), order.by = index(boc_s0)), col = "purple",     lwd = 2)
+lines(zoo(fitted(fit1), order.by = index(boc_s1)), col = "blue",       lwd = 2)
+lines(zoo(fitted(fit2), order.by = index(boc_s2)), col = "darkorange", lwd = 2)
+lines(zoo(fitted(fit3), order.by = index(boc_s3)), col = "brown",      lwd = 2)
+lines(zoo(fitted(fit4), order.by = index(boc_s4)), col = "red",        lwd = 2)
+lines(zoo(fitted(fit5), order.by = index(boc_s5)), col = "green4",     lwd = 2)
+
+abline(v = as.Date("2004-05-01"), col = "purple",     lty = 2, lwd = 1.5)
+abline(v = as.Date("2008-11-01"), col = "blue",       lty = 2, lwd = 1.5)
+abline(v = as.Date("2017-08-01"), col = "darkorange", lty = 2, lwd = 1.5)
+abline(v = as.Date("2020-01-01"), col = "brown",      lty = 2, lwd = 1.5)
+abline(v = as.Date("2022-05-01"), col = "red",        lty = 2, lwd = 1.5)
+
+legend("topleft",
+       legend = c("Observed",
+                  "pre-2004 trend", "2004–2008 trend", "2008–2017 trend",
+                  "2017–2020 trend", "2020–2022 trend", "2022– trend",
+                  "2004 break", "2008 break", "2017 break",
+                  "2020 break", "2022 break"),
+       col    = c("darkgray", "purple", "blue", "darkorange",
+                  "brown", "red", "green4",
+                  "purple", "blue", "darkorange", "brown", "red"),
+       lty    = c(1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2),
+       lwd    = c(1, 2, 2, 2, 2, 2, 2, 1.5, 1.5, 1.5, 1.5, 1.5),
+       bty    = "n", cex = 0.7)
+
+
+# ── Define segments (BOC YoY growth breaks) ───────────────
+boc_g0 <- window(boc_ts, end   = as.Date("1996-10-01"))
+boc_g1 <- window(boc_ts, start = as.Date("1996-11-01"), end = as.Date("1999-02-01"))
+boc_g2 <- window(boc_ts, start = as.Date("1999-03-01"), end = as.Date("2005-08-01"))
+boc_g3 <- window(boc_ts, start = as.Date("2005-09-01"), end = as.Date("2006-11-01"))
+boc_g4 <- window(boc_ts, start = as.Date("2006-12-01"), end = as.Date("2008-11-01"))
+boc_g5 <- window(boc_ts, start = as.Date("2008-12-01"), end = as.Date("2009-11-01"))
+boc_g6 <- window(boc_ts, start = as.Date("2009-12-01"), end = as.Date("2020-01-01"))
+boc_g7 <- window(boc_ts, start = as.Date("2020-02-01"), end = as.Date("2021-01-01"))
+boc_g8 <- window(boc_ts, start = as.Date("2021-02-01"), end = as.Date("2022-12-01"))
+boc_g9 <- window(boc_ts, start = as.Date("2023-01-01"))
+
+# ── Segment means ─────────────────────────────────────────
+m0 <- mean(coredata(boc_g0))
+m1 <- mean(coredata(boc_g1))
+m2 <- mean(coredata(boc_g2))
+m3 <- mean(coredata(boc_g3))
+m4 <- mean(coredata(boc_g4))
+m5 <- mean(coredata(boc_g5))
+m6 <- mean(coredata(boc_g6))
+m7 <- mean(coredata(boc_g7))
+m8 <- mean(coredata(boc_g8))
+m9 <- mean(coredata(boc_g9))
+
+# ── Plot ──────────────────────────────────────────────────
+plot(boc_ts, col = "darkgray", lwd = 1, type = "l",
+     main = "BOC YoY Growth — Segment Means",
+     ylab = "YoY Growth (%)", xlab = "Date")
+
+lines(zoo(rep(m0, length(boc_g0)), order.by = index(boc_g0)), col = "purple",     lwd = 2)
+lines(zoo(rep(m1, length(boc_g1)), order.by = index(boc_g1)), col = "blue",       lwd = 2)
+lines(zoo(rep(m2, length(boc_g2)), order.by = index(boc_g2)), col = "darkorange", lwd = 2)
+lines(zoo(rep(m3, length(boc_g3)), order.by = index(boc_g3)), col = "darkgreen",  lwd = 2)
+lines(zoo(rep(m4, length(boc_g4)), order.by = index(boc_g4)), col = "brown",      lwd = 2)
+lines(zoo(rep(m5, length(boc_g5)), order.by = index(boc_g5)), col = "pink",       lwd = 2)
+lines(zoo(rep(m6, length(boc_g6)), order.by = index(boc_g6)), col = "steelblue",  lwd = 2)
+lines(zoo(rep(m7, length(boc_g7)), order.by = index(boc_g7)), col = "red",        lwd = 2)
+lines(zoo(rep(m8, length(boc_g8)), order.by = index(boc_g8)), col = "green4",     lwd = 2)
+lines(zoo(rep(m9, length(boc_g9)), order.by = index(boc_g9)), col = "black",      lwd = 2)
+
+abline(v = as.Date("1996-11-01"), col = "purple",     lty = 2, lwd = 1.2)
+abline(v = as.Date("1999-03-01"), col = "blue",       lty = 2, lwd = 1.2)
+abline(v = as.Date("2005-09-01"), col = "darkorange", lty = 2, lwd = 1.2)
+abline(v = as.Date("2006-12-01"), col = "darkgreen",  lty = 2, lwd = 1.2)
+abline(v = as.Date("2008-12-01"), col = "brown",      lty = 2, lwd = 1.2)
+abline(v = as.Date("2009-12-01"), col = "pink",       lty = 2, lwd = 1.2)
+abline(v = as.Date("2020-02-01"), col = "red",        lty = 2, lwd = 1.2)
+abline(v = as.Date("2021-02-01"), col = "green4",     lty = 2, lwd = 1.2)
+abline(v = as.Date("2023-01-01"), col = "black",      lty = 2, lwd = 1.2)
+abline(h = 0, col = "black", lty = 3, lwd = 1)
+
+legend("bottomleft",
+       legend = c("YoY Growth",
+                  paste0("pre-1997: ",       round(m0, 1), "%"),
+                  paste0("1997-1999: ",      round(m1, 1), "%"),
+                  paste0("1999-2005: ",      round(m2, 1), "%"),
+                  paste0("2005-2006: ",      round(m3, 1), "%"),
+                  paste0("2006-2008: ",      round(m4, 1), "%"),
+                  paste0("2008-2009: ",      round(m5, 1), "%"),
+                  paste0("2009-2020: ",      round(m6, 1), "%"),
+                  paste0("2020-2021: ",      round(m7, 1), "%"),
+                  paste0("2021-2023: ",      round(m8, 1), "%"),
+                  paste0("2023-: ",          round(m9, 1), "%")),
+       col    = c("darkgray", "purple", "blue", "darkorange", "darkgreen",
+                  "brown", "pink", "steelblue", "red", "green4", "black"),
+       lty    = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+       lwd    = c(1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2),
+       bty    = "n", cex = 0.65)
