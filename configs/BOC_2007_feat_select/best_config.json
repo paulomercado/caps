@@ -1,15 +1,15 @@
 {
-    "hidden_size": 64,
+    "hidden_size": 96,
     "num_layers": 2,
-    "dropout": 0.10804775394379222,
+    "dropout": 0.22795368260958426,
     "use_attention": false,
     "use_branches": false,
-    "lr": 0.0014326199740784223,
-    "wd": 3.4095905017318323e-06,
+    "lr": 0.0017144101841798317,
+    "wd": 4.976274437807991e-05,
     "batch_size": 16,
     "seq_len": 6,
-    "l1_lambda": 6.885439863092151e-05,
-    "train_loss_name": "madl",
+    "l1_lambda": 7.29640552756585e-06,
+    "train_loss_name": "huber",
     "early_stopping_patience": 75,
     "n_splits": 5,
     "log_transform": true,
@@ -20,9 +20,8 @@
     "forecast_horizon": 1,
     "tag": "feat_select",
     "features": [
-        "BOC",
-        "USDPHP",
-        "Inflation"
+        "TotalTrade_PHPMN",
+        "USDPHP"
     ],
     "dummy_vars": [
         "TRAIN",

@@ -1,14 +1,14 @@
 {
-    "hidden_size": 64,
+    "hidden_size": 96,
     "num_layers": 1,
-    "dropout": 0.20765145219181744,
+    "dropout": 0.2203986929121965,
     "use_attention": false,
     "use_branches": false,
-    "lr": 0.0018690614428747143,
-    "wd": 5.168608885501846e-06,
+    "lr": 0.0010677300685511335,
+    "wd": 9.909342140440732e-05,
     "batch_size": 16,
     "seq_len": 18,
-    "l1_lambda": 1.645285707542503e-06,
+    "l1_lambda": 2.1459389812344527e-06,
     "train_loss_name": "mse",
     "early_stopping_patience": 75,
     "n_splits": 5,
@@ -20,7 +20,6 @@
     "forecast_horizon": 1,
     "tag": "feat_select",
     "features": [
-        "BIR",
         "USDPHP",
         "Inflation"
     ],

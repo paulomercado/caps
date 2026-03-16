@@ -1,15 +1,15 @@
 {
-    "hidden_size": 96,
+    "hidden_size": 64,
     "num_layers": 2,
-    "dropout": 0.21987867418012377,
+    "dropout": 0.290847517657436,
     "use_attention": false,
     "use_branches": false,
-    "lr": 0.001215558597979732,
-    "wd": 1.2704952111815533e-05,
-    "batch_size": 16,
+    "lr": 0.0018256286925886194,
+    "wd": 2.1152082379385873e-06,
+    "batch_size": 32,
     "seq_len": 6,
-    "l1_lambda": 3.3052368457504054e-06,
-    "train_loss_name": "huber",
+    "l1_lambda": 3.847326337355536e-06,
+    "train_loss_name": "mse",
     "early_stopping_patience": 75,
     "n_splits": 5,
     "log_transform": true,
@@ -20,16 +20,16 @@
     "forecast_horizon": 1,
     "tag": "feat_select",
     "features": [
-        "Other Offices",
-        "USDPHP",
-        "Inflation"
+        "USDPHP"
     ],
     "dummy_vars": [
         "TRAIN",
-        "CREATE"
+        "CREATE",
+        "COVID-19"
     ],
     "use_seasonal": true,
     "lag_periods": [
+        1,
         12
     ],
     "use_lags": true,

@@ -1,14 +1,14 @@
 {
     "hidden_size": 96,
     "num_layers": 1,
-    "dropout": 0.26503398847272364,
+    "dropout": 0.28964179997496786,
     "use_attention": false,
     "use_branches": false,
-    "lr": 0.001914623675543923,
-    "wd": 4.837973328653697e-05,
+    "lr": 0.0016677956914830005,
+    "wd": 1.364572743375892e-06,
     "batch_size": 32,
-    "seq_len": 6,
-    "l1_lambda": 7.696853447481517e-05,
+    "seq_len": 18,
+    "l1_lambda": 1.6729055927584452e-06,
     "train_loss_name": "quantile",
     "early_stopping_patience": 75,
     "n_splits": 5,
@@ -20,9 +20,8 @@
     "forecast_horizon": 1,
     "tag": "feat_select",
     "features": [
-        "BOC",
-        "USDPHP",
-        "Inflation"
+        "TotalTrade_PHPMN",
+        "USDPHP"
     ],
     "dummy_vars": [
         "TRAIN",
