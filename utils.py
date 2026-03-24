@@ -124,7 +124,7 @@ def explain_model(models, data_loader, args, num_samples=100):
         return np.mean(preds, axis=0)
 
     explainer = shap.KernelExplainer(ensemble_predict, background_data)
-    shap_values = explainer.shap_values(test_data, nsamples=500)
+    shap_values = explainer.shap_values(test_data, nsamples=500,seed=1)
 
     return explainer, shap_values, test_data, feature_names
 
