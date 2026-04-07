@@ -55,39 +55,12 @@ class MADLoss(nn.Module):
         actual_diff = actual[1:] - actual[:-1]
         sign_prod   = torch.sign(pred_diff * actual_diff)
         
-        # 1 = wrong direction, 0 = correct direction
+
         dir_loss = torch.mean((1 - sign_prod) / 2 * torch.abs(actual_diff))
         
         mae = torch.mean(torch.abs(actual - pred))
         
         return self.alpha * dir_loss + (1 - self.alpha) * mae
-class DirectionalLoss(nn.Module):
-    def __init__(self, alpha=0.5):
-        """
-        Combines MSE with directional penalty
-        alpha: weight for directional component (0-1)
-              0 = pure MSE, 1 = pure directional
-        """
-        super().__init__()
-        self.alpha = alpha
-        self.mse = nn.MSELoss()
-        
-    def forward(self, predictions, targets):
-        # MSE component
-        mse_loss = self.mse(predictions, targets)
-        
-        # Directional component (penalize wrong direction)
-        if predictions.shape[0] > 1:  # Need at least 2 samples
-            pred_diff = predictions[1:] - predictions[:-1]
-            target_diff = targets[1:] - targets[:-1]
-            
-            # Check if signs match (same direction)
-            direction_correct = (pred_diff * target_diff) > 0
-            direction_loss = 1 - direction_correct.float().mean()
-        else:
-            direction_loss = torch.tensor(0.0, device=predictions.device)
-        
-        return (1 - self.alpha) * mse_loss + self.alpha * direction_loss
 
 class EarlyStopper:
     def __init__(self, patience=1, min_delta=0, smooth_window=5):
