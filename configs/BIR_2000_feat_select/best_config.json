@@ -1,14 +1,12 @@
 {
     "hidden_size": 64,
     "num_layers": 2,
-    "dropout": 0.1168111362104846,
-    "use_attention": false,
-    "use_branches": false,
-    "lr": 0.0012655907055875363,
-    "wd": 1.6923960770436285e-06,
+    "dropout": 0.1038653944160451,
+    "lr": 0.001885152380659019,
+    "wd": 1.012360842783149e-06,
     "batch_size": 16,
-    "seq_len": 18,
-    "l1_lambda": 1.7050950586128263e-06,
+    "seq_len": 6,
+    "l1_lambda": 2.0178513815683006e-06,
     "train_loss_name": "mse",
     "early_stopping_patience": 75,
     "n_splits": 5,
@@ -20,7 +18,11 @@
     "forecast_horizon": 1,
     "tag": "feat_select",
     "features": [
+        "Tax Revenues",
+        "Imports_PHPMN",
+        "Other Offices",
         "USDPHP",
+        "Non-tax Revenues",
         "Inflation"
     ],
     "dummy_vars": [
@@ -29,10 +31,8 @@
         "COVID-19"
     ],
     "use_seasonal": true,
-    "lag_periods": [
-        12
-    ],
-    "use_lags": true,
+    "lag_periods": [],
+    "use_lags": false,
     "labels": [
         "BIR"
     ],

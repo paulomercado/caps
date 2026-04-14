@@ -394,7 +394,6 @@ def crossval(data, labels, args):
             output_size=output_size,
             num_layers=args.num_layers,
             dropout=args.dropout,
-            num_attention_heads=getattr(args, 'num_attention_heads', 4),
             args=args
         ).to(args.device)
         
@@ -424,14 +423,16 @@ def crossval(data, labels, args):
             return float(np.mean(np.abs((actuals[mask] - preds[mask]) / (actuals[mask] + 1e-8))) * 100)
         
         peak_mape = mape_on_top_quantile(preds_flat, actuals_flat, q=0.90)
+
         
+
         if pred_std < 0.05 * actual_std:
             peak_mape = 999.0
             dir_acc   = 0.0
             test_loss = torch.tensor(999.0)
         
-        # Combined metric: peak accuracy + directional accuracy
-        combined = 0.9 * peak_mape + 0.1 * (1 - dir_acc) * 100
+        test_loss_val = test_loss.item() if torch.is_tensor(test_loss) else test_loss
+        combined = 0.5 * test_loss_val + 0.4 * peak_mape + 0.1 * (1 - dir_acc) * 100
         
         fold_results.append({
             'fold': fold + 1,

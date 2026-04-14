@@ -1,15 +1,15 @@
 {
     "hidden_size": 96,
     "num_layers": 2,
-    "dropout": 0.17796904615647216,
+    "dropout": 0.11863495393783824,
     "use_attention": false,
     "use_branches": false,
-    "lr": 0.0016463977344288738,
-    "wd": 5.4515173680424774e-05,
-    "batch_size": 16,
+    "lr": 0.0007941469313477955,
+    "wd": 3.725103107933936e-05,
+    "batch_size": 32,
     "seq_len": 6,
-    "l1_lambda": 1.3220510880742728e-06,
-    "train_loss_name": "huber",
+    "l1_lambda": 1.4977813422818997e-06,
+    "train_loss_name": "mse",
     "early_stopping_patience": 75,
     "n_splits": 5,
     "log_transform": true,
@@ -29,7 +29,8 @@
         "NominalGDP_disagg",
         "Pop_disagg",
         "USDPHP",
-        "TotalTrade_PHPMN"
+        "Imports_PHPMN",
+        "Exports_PHPMN"
     ],
     "dummy_vars": [
         "COVID-19",

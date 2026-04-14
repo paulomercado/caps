@@ -1,15 +1,13 @@
 {
     "hidden_size": 96,
-    "num_layers": 1,
-    "dropout": 0.28964179997496786,
-    "use_attention": false,
-    "use_branches": false,
-    "lr": 0.0016677956914830005,
-    "wd": 1.364572743375892e-06,
-    "batch_size": 32,
-    "seq_len": 18,
-    "l1_lambda": 1.6729055927584452e-06,
-    "train_loss_name": "quantile",
+    "num_layers": 2,
+    "dropout": 0.20421193318834913,
+    "lr": 0.0013847643801365148,
+    "wd": 1.471888164783803e-06,
+    "batch_size": 16,
+    "seq_len": 6,
+    "l1_lambda": 1.6579851290842745e-06,
+    "train_loss_name": "mse",
     "early_stopping_patience": 75,
     "n_splits": 5,
     "log_transform": true,
@@ -20,8 +18,10 @@
     "forecast_horizon": 1,
     "tag": "feat_select",
     "features": [
-        "TotalTrade_PHPMN",
-        "USDPHP"
+        "Imports_PHPMN",
+        "Other Offices",
+        "USDPHP",
+        "Non-tax Revenues"
     ],
     "dummy_vars": [
         "TRAIN",

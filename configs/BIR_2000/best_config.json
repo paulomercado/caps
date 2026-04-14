@@ -1,14 +1,14 @@
 {
-    "hidden_size": 96,
+    "hidden_size": 64,
     "num_layers": 2,
-    "dropout": 0.1397838071808858,
+    "dropout": 0.2593105621361808,
     "use_attention": false,
     "use_branches": false,
-    "lr": 0.0015566142666766964,
-    "wd": 5.084495745619359e-05,
-    "batch_size": 16,
+    "lr": 0.0017927959284373216,
+    "wd": 6.253370859097299e-05,
+    "batch_size": 32,
     "seq_len": 6,
-    "l1_lambda": 5.305129318327407e-06,
+    "l1_lambda": 1.300134312452832e-06,
     "train_loss_name": "mse",
     "early_stopping_patience": 75,
     "n_splits": 5,
@@ -29,7 +29,8 @@
         "NominalGDP_disagg",
         "Pop_disagg",
         "USDPHP",
-        "TotalTrade_PHPMN"
+        "Imports_PHPMN",
+        "Exports_PHPMN"
     ],
     "dummy_vars": [
         "COVID-19",

@@ -1,14 +1,12 @@
 {
     "hidden_size": 64,
     "num_layers": 2,
-    "dropout": 0.290847517657436,
-    "use_attention": false,
-    "use_branches": false,
-    "lr": 0.0018256286925886194,
-    "wd": 2.1152082379385873e-06,
+    "dropout": 0.10456456124611953,
+    "lr": 0.0014101675938676583,
+    "wd": 3.0526394032795832e-06,
     "batch_size": 32,
-    "seq_len": 6,
-    "l1_lambda": 3.847326337355536e-06,
+    "seq_len": 12,
+    "l1_lambda": 4.58918148279329e-06,
     "train_loss_name": "mse",
     "early_stopping_patience": 75,
     "n_splits": 5,
@@ -20,6 +18,9 @@
     "forecast_horizon": 1,
     "tag": "feat_select",
     "features": [
+        "Pop_disagg",
+        "Imports_PHPMN",
+        "Non-tax Revenues",
         "USDPHP"
     ],
     "dummy_vars": [
@@ -30,6 +31,8 @@
     "use_seasonal": true,
     "lag_periods": [
         1,
+        3,
+        6,
         12
     ],
     "use_lags": true,

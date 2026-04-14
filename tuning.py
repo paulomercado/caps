@@ -5,43 +5,37 @@ from ray import tune
 
 def ray_train(config):
     from train import (
-        load_dataset, crossval, set_seed, Arguments, MAPELoss, RMSELoss,MADLoss,QuantileLoss
+        load_dataset, crossval, set_seed, Arguments, MAPELoss, RMSELoss, MADLoss, QuantileLoss
     )
     import torch.nn as nn
 
-    # Only pass data-shape args to load_dataset
     data_args = Arguments(
         features=config.get('features'),
         labels=config.get('labels'),
         dummy_vars=config.get('dummy_vars'),
         experiment_name=config.get('experiment_name', 'default'),
         lag_periods=config.get('lag_periods', [1, 3, 6, 12]),
-        use_branches=config.get('use_branches', True),
-        use_attention=config.get('use_attention', False),
         use_seasonal=config.get('use_seasonal', False),
         use_lags=config.get('use_lags', True),
-        start_date=config.get('start_date', '1992-01-01')
+        start_date=config.get('start_date', '2000-01-01')
     )
 
     dataset = load_dataset(data_args)
 
     loss_dict = {
-        "huber":       nn.HuberLoss(),
-        "mse":         nn.MSELoss(),
-        "mae":         nn.L1Loss(),
+        "huber":    nn.HuberLoss(),
+        "mse":      nn.MSELoss(),
+        "mae":      nn.L1Loss(),
         "quantile": QuantileLoss(),
-        "madl":         MADLoss(),
-        "rmse":        RMSELoss()
+        "madl":     MADLoss(),
+        "rmse":     RMSELoss()
     }
     train_criterion = loss_dict[config.get('train_loss_name', 'mse')]
 
-    # Only architecture/optimizer keys from config — no data keys
     args = Arguments(
         hidden_size=config['hidden_size'],
         num_layers=config['num_layers'],
         dropout=config['dropout'],
-        use_attention=config.get('use_attention', False),
-        use_branches=config.get('use_branches', False),
         lr=config['lr'],
         wd=config['wd'],
         batch_size=config['batch_size'],
@@ -49,7 +43,6 @@ def ray_train(config):
         l1_lambda=config['l1_lambda'],
         train_loss_name=config.get('train_loss_name', 'mse'),
         forecast_horizon=config.get('forecast_horizon', 1),
-        # data
         features=config.get('features'),
         labels=config.get('labels'),
         dummy_vars=config.get('dummy_vars'),
@@ -58,7 +51,6 @@ def ray_train(config):
         use_lags=config.get('use_lags', True),
         experiment_name=config.get('experiment_name', 'default'),
         n_splits=config.get('n_splits', 5),
-        # training
         seed=1,
         epoch=200,
         tuning_mode=True,
@@ -93,6 +85,6 @@ def ray_train(config):
         "std":       std_loss,
         "peak_loss": mean_peak,
         "dir_acc":   mean_dir,
-        "combined": mean_combined,
+        "combined":  mean_combined,
         **per_label_means
     })
