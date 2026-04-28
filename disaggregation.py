@@ -42,7 +42,7 @@ def create_disagg_df(data, target_col, x_col=None, yearly=False, grain=3):
 
     return df
 
-def rolling_tempdisagg(data, method="litterman-opt", conversion="sum", grain=3,start_months=12):
+def rolling_tempdisagg(data, method="litterman-opt", conversion="sum", grain=3, start_months=12):
  
     df = data.copy()
 
@@ -73,7 +73,7 @@ def rolling_tempdisagg(data, method="litterman-opt", conversion="sum", grain=3,s
     return pd.Series(out)
 
 def main():
-    output_file = 'Data/disaggregated.csv'
+    output_file = 'Data/disaggregated_updated.csv'
 
     # check if already exists
     if os.path.exists(output_file):
@@ -82,45 +82,48 @@ def main():
         return subset
 
     # load data
-    data = pd.read_csv('Data/Macro.csv')
+    data = pd.read_csv('Data/Macro_combined.csv')
 
     # create subset
-    subset = prepare_subset(data, date_col=data.columns[3], start="1991-01-01", end="2024-12-31")
+    subset = prepare_subset(data, date_col=data.columns[3], start="1991-01-01", end="2027-03-31")
 
-
-    #GDP
+    # GDP - use Imports_PHPMN + Exports_PHPMN as indicator (has forecast values)
     df_gdp = create_disagg_df(subset, target_col='Nominal GDP', yearly=False, grain=3)
-    df_gdp['X'] = (
+    df_gdp['X'] = pd.to_numeric(subset['Imports_PHPMN'], errors='coerce') + \
+                  pd.to_numeric(subset['Exports_PHPMN'], errors='coerce')
+
+    subset['TotalTrade'] = (
         pd.to_numeric(subset['Exports'], errors='coerce') +
         pd.to_numeric(subset['Imports'], errors='coerce')
-    ) * pd.to_numeric(subset['USDPHP'], errors='coerce')
+    )
 
-    subset['TotalTrade'] =  (pd.to_numeric(subset['Exports'], errors='coerce') +
-        pd.to_numeric(subset['Imports'], errors='coerce'))
+    subset['TotalTrade_PHPMN'] = (
+        pd.to_numeric(subset['Imports_PHPMN'], errors='coerce') +
+        pd.to_numeric(subset['Exports_PHPMN'], errors='coerce')
+    )
 
-    subset['TotalTrade_PHPMN'] =  (
-        pd.to_numeric(subset['Exports'], errors='coerce') +
-        pd.to_numeric(subset['Imports'], errors='coerce')
-    ) * pd.to_numeric(subset['USDPHP'], errors='coerce')
-    
+    print("Running GDP disaggregation...")
     subset['NominalGDP_disagg'] = rolling_tempdisagg(df_gdp).values
+    print("GDP disaggregation done.")
 
-    #Population
-    pop_subset = prepare_subset(data, date_col=data.columns[3], start="1989-01-01", end="2024-12-31")
+    # Population
+    pop_subset = prepare_subset(data, date_col=data.columns[3], start="1989-01-01", end="2027-03-31")
 
     dfpop = create_disagg_df(pop_subset, target_col='Population', yearly=True, grain=12)
 
-    pop_roll = rolling_tempdisagg(dfpop, method='denton', conversion='average',grain=12,start_months=36).values
+    print("Running Population disaggregation...")
+    pop_roll = rolling_tempdisagg(dfpop, method='denton', conversion='average', grain=12, start_months=36).values
     pop_roll_aligned = pop_roll[24:24 + len(subset)]
 
     subset['Pop_disagg'] = pop_roll_aligned
+    print("Population disaggregation done.")
 
-    # save
-    subset = subset.iloc[:, 3:] 
+    # save — drop first 3 columns (Unnamed: 0, Year, Month)
+    subset = subset.iloc[:, 3:]
     subset.to_csv(output_file, index=False)
-    print("Disaggregated CSV created.")
+    print(f"Disaggregated CSV saved. Shape: {subset.shape}")
     return subset
 
-    
+
 if __name__ == "__main__":
     main()
